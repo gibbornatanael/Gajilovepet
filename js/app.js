@@ -4,6 +4,19 @@
    ========================================================================= */
 
 /* ============================ STATE ============================ */
+/* Penyimpanan tahan-banting: kalau localStorage diblokir (mis. mode privat
+   atau file:// di sebagian browser), aplikasi tetap jalan untuk sesi ini. */
+const gudang = (() => {
+  try {
+    localStorage.setItem('__tes__', '1'); localStorage.removeItem('__tes__');
+    return localStorage;
+  } catch (e) {
+    console.warn('localStorage tidak tersedia — data hanya bertahan selama sesi ini.');
+    const mem = {};
+    return { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: (k) => { delete mem[k]; } };
+  }
+})();
+
 let state = muat();
 let periode = periodeTerakhir();
 let simpanTimer = null;
@@ -38,19 +51,6 @@ function migrasiBaris(r) {
     denda: +r.denda || 0, hutang: +r.hutang || 0, catatan: r.catatan || '' };
   return bersih;
 }
-
-/* Penyimpanan tahan-banting: kalau localStorage diblokir (mis. mode privat
-   atau file:// di sebagian browser), aplikasi tetap jalan untuk sesi ini. */
-const gudang = (() => {
-  try {
-    localStorage.setItem('__tes__', '1'); localStorage.removeItem('__tes__');
-    return localStorage;
-  } catch (e) {
-    console.warn('localStorage tidak tersedia — data hanya bertahan selama sesi ini.');
-    const mem = {};
-    return { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = String(v); }, removeItem: (k) => { delete mem[k]; } };
-  }
-})();
 
 function muat() {
   try {
