@@ -15,10 +15,10 @@
    ========================================================================= */
 
 window.FIREBASE_CONFIG = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: '',
+  apiKey: "AIzaSyDCLiQefpHFIh7nkfnymChQ69VCDcaJcJs",
+  authDomain: "gajilovepet.firebaseapp.com",
+  projectId: "gajilovepet",
+  storageBucket: "gajilovepet.firebasestorage.app",
+  messagingSenderId: "603897232201",
+  appId: "1:603897232201:web:69c76efd1aaba34374f898"
 };
