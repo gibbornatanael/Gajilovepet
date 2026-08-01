@@ -49,10 +49,33 @@ async function buatAkunKaryawan(username, sandi) {
   }
   if (!sandi || sandi.length < 6) throw new Error('Kata sandi minimal 6 karakter.');
 
-  const cred = await authM.createUserWithEmailAndPassword(authKedua, email, sandi);
-  const uid = cred.user.uid;
-  await authM.signOut(authKedua);   // bersihkan sesi di app kedua, tidak memengaruhi app utama
-  return { username: username.trim(), authUid: uid };
+  try {
+    const cred = await authM.createUserWithEmailAndPassword(authKedua, email, sandi);
+    const uid = cred.user.uid;
+    await authM.signOut(authKedua);   // bersihkan sesi di app kedua, tidak memengaruhi app utama
+    return { username: username.trim(), authUid: uid };
+  } catch (err) {
+    // Kalau email sudah ada, coba reset password dengan login + update
+    if (err.code === 'auth/email-already-in-use') {
+      try {
+        const cred = await authM.signInWithEmailAndPassword(authKedua, email, sandi);
+        const uid = cred.user.uid;
+        // Akun sudah ada dan password cocok, langsung pakai
+        await authM.signOut(authKedua);
+        return { username: username.trim(), authUid: uid };
+      } catch (signInErr) {
+        // Password tidak cocok — akun sudah terdaftar tapi password beda
+        // Buatkan username baru dengan random suffix
+        const newUsername = username + '-' + Math.random().toString(36).slice(2, 5);
+        const newEmail = emailDariUsername(newUsername);
+        const cred = await authM.createUserWithEmailAndPassword(authKedua, newEmail, sandi);
+        const uid = cred.user.uid;
+        await authM.signOut(authKedua);
+        return { username: newUsername.trim(), authUid: uid };
+      }
+    }
+    throw err;
+  }
 }
 
 window.Provisioning = { buatAkunKaryawan };
