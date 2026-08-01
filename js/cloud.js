@@ -73,7 +73,11 @@ async function mulai() {
       import(`${V}/firebase-firestore.js`),
     ]);
 
-    const app = initializeApp(CFG);
+    // Nama instance khusus ("pemilik") supaya sesi login di sini TIDAK
+    // tercampur dengan sesi karyawan di lapor.html — keduanya memakai
+    // project Firebase yang sama, dan tanpa nama khusus ini Firebase
+    // menyimpan kedua sesi di kunci penyimpanan yang sama persis.
+    const app = initializeApp(CFG, 'pemilik');
     auth = authMod.getAuth(app);
 
     // Cache offline supaya aplikasi tetap jalan tanpa internet

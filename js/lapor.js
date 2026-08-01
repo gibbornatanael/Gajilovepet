@@ -48,7 +48,10 @@ async function mulai() {
     import(`${V}/firebase-firestore.js`),
   ]);
   authMod = aM; fsMod = fM;
-  const app = initializeApp(CFG);
+  // Nama instance khusus ("karyawan") supaya sesi login karyawan di sini
+  // TIDAK tercampur dengan sesi pemilik di index.html — lihat catatan
+  // yang sama di cloud.js.
+  const app = initializeApp(CFG, 'karyawan');
   auth = authMod.getAuth(app);
   try {
     db = fsMod.initializeFirestore(app, {
