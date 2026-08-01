@@ -1,0 +1,70 @@
+rules_version = '2';
+
+// Aturan akses Firestore untuk aplikasi gaji LOVE Pet Clinic.
+//
+// Ada dua "peran":
+//   • Pemilik   — punya dokumen di /pengguna/{uid} (dibuat otomatis oleh
+//                 index.html/cloud.js saat pertama kali masuk). Boleh
+//                 membaca & menulis semuanya.
+//   • Karyawan  — akunnya dibuat oleh pemilik lewat Kelola → Karyawan,
+//                 lalu login di lapor.html. Hanya boleh menyentuh datanya
+//                 sendiri, dan hanya boleh MEMBUAT laporan (tidak menghapus
+//                 riwayat — pembatalan dilakukan dengan mengubah status).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isPemilik() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/pengguna/$(request.auth.uid));
+    }
+    function authUidKaryawan(klinikId, empId) {
+      return get(/databases/$(database)/documents/klinik/$(klinikId)/karyawan/$(empId)).data.authUid;
+    }
+
+    // Dokumen berisi seluruh data aplikasi milik satu pemilik
+    match /pengguna/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Profil karyawan (nama, posisi, cabang, akun login)
+    match /klinik/{klinikId}/karyawan/{empId} {
+      allow read: if isPemilik() ||
+        (request.auth != null && resource.data.authUid == request.auth.uid);
+      allow write: if isPemilik();
+    }
+
+    // Laporan performa harian dari karyawan.
+    // ID dokumen dibuat aplikasi dengan pola {empId}_{tanggal}_{kategori}
+    // sehingga "maksimal satu laporan per hari per kategori" otomatis
+    // terjamin — dokumen yang sama ditimpa, bukan digandakan.
+    match /klinik/{klinikId}/laporan/{laporId} {
+      allow read: if isPemilik() ||
+        (request.auth != null && resource.data.authUid == request.auth.uid);
+
+      // Membuat laporan baru: hanya karyawan itu sendiri, dan hanya atas
+      // nama baris karyawan yang authUid-nya memang cocok dengan dirinya
+      // (mencegah seseorang membuat laporan atas nama karyawan lain).
+      allow create: if request.auth != null &&
+        request.resource.data.authUid == request.auth.uid &&
+        request.resource.data.authUid == authUidKaryawan(klinikId, request.resource.data.empId) &&
+        request.resource.data.status in ['aktif', 'batal'];
+
+      // Mengubah laporan: karyawan boleh membatalkan/mengaktifkan lagi
+      // miliknya sendiri; pemilik boleh mengubah dokumen mana pun — dipakai
+      // untuk membersihkan foto yang sudah lebih dari 3 bulan.
+      allow update: if isPemilik() ||
+        (request.auth != null && resource.data.authUid == request.auth.uid &&
+         request.resource.data.authUid == resource.data.authUid &&
+         request.resource.data.empId == resource.data.empId &&
+         request.resource.data.status in ['aktif', 'batal']);
+
+      // Hapus permanen (mis. membersihkan salah input) hanya oleh pemilik.
+      allow delete: if isPemilik();
+    }
+
+    // Semua jalur lain ditolak
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

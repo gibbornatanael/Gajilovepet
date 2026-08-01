@@ -1,0 +1,4 @@
+# Berkas Numbers berisi data gaji asli — jangan ikut ke repository
+*.numbers
+.DS_Store
+node_modules/

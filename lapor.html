@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bonus Love Pet">
+<meta name="theme-color" content="#0f7a6c">
+<meta name="robots" content="noindex, nofollow">
+<title>Performance Bonus LovePet</title>
+<link rel="manifest" href="manifest-lapor.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/lapor.css">
+</head>
+<body class="lapor-body">
+
+<!-- ====================== LAYAR MASUK ====================== -->
+<div class="login-overlay" id="loginOverlay">
+  <form class="login-card" id="loginForm">
+    <div class="login-mark">🐾</div>
+    <h2>Performance Bonus LovePet</h2>
+    <p class="muted">Masuk untuk melaporkan lembur, rawat inap, styling, dan operasi.</p>
+
+    <label class="field"><span class="f-label">Nama pengguna</span>
+      <input type="text" id="loginUser" autocomplete="username" required placeholder="mis. risa" autocapitalize="off">
+    </label>
+    <label class="field"><span class="f-label">Kata sandi</span>
+      <input type="password" id="loginSandi" autocomplete="current-password" required minlength="6">
+    </label>
+
+    <p class="login-error" id="loginError" hidden></p>
+
+    <button type="submit" class="btn btn-primary btn-block" id="loginSubmit">Masuk</button>
+    <p class="linkish sub" style="margin-top:4px">Lupa sandi? Hubungi pemilik klinik untuk dibuatkan yang baru.</p>
+  </form>
+</div>
+
+<!-- ====================== APLIKASI KARYAWAN ====================== -->
+<div class="app" id="appKaryawan" hidden>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">🐾</span>
+      <span class="brand-text"><strong>Performance Bonus</strong><small id="namaKaryawan">—</small></span>
+    </div>
+    <div class="topbar-actions">
+      <span class="cloud-status" id="cloudStatus" hidden></span>
+      <button class="icon-btn" id="btnKeluarKaryawan" title="Keluar" aria-label="Keluar">⏻</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="segmented" id="segLapor" role="tablist">
+      <button class="seg is-active" data-seg="lapor" role="tab">Lapor</button>
+      <button class="seg" data-seg="capaian" role="tab">Capaian</button>
+    </div>
+
+    <!-- ---------------- LAPOR ---------------- -->
+    <section class="segpane is-active" id="pane-lapor">
+      <div class="cabang-toggle" id="cabangToggle"></div>
+
+      <div class="lapor-grid" id="laporGrid"></div>
+
+      <p class="muted lapor-note">
+        Satu laporan per kategori per hari. Foto bukti wajib diambil langsung dari kamera.
+        Bisa dibatalkan hari ini juga lewat tab <b>Capaian</b>.
+      </p>
+    </section>
+
+    <!-- ---------------- CAPAIAN ---------------- -->
+    <section class="segpane" id="pane-capaian">
+      <div class="toolbar">
+        <label class="period-picker">
+          <span class="sr-only">Bulan</span>
+          <select id="periodeKaryawan"></select>
+        </label>
+      </div>
+
+      <div class="stat-row" id="statKaryawan"></div>
+
+      <div class="card">
+        <div class="card-head"><h2>Riwayat Laporan</h2></div>
+        <div id="riwayatList" class="list"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<input type="file" id="fileFoto" accept="image/*" capture="environment" hidden>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script type="module" src="js/lapor.js"></script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>

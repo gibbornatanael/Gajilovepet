@@ -1,0 +1,18 @@
+{
+  "name": "Performance Bonus LovePet",
+  "short_name": "Bonus Love Pet",
+  "description": "Lapor lembur, rawat inap, styling, dan operasi — LOVE Pet Clinic",
+  "start_url": "./lapor.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f2f2f0",
+  "theme_color": "#0f7a6c",
+  "lang": "id",
+  "icons": [
+    { "src": "icons/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

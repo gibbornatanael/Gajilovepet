@@ -1,0 +1,68 @@
+/* =========================================================================
+   lapor.css — halaman "Performance Bonus LovePet" untuk karyawan
+   Dipakai bersama css/styles.css (token warna, kartu, tombol, dsb sama).
+   ========================================================================= */
+
+.lapor-body { padding-bottom: 24px; }
+.lapor-body .app { display: block; }
+.lapor-body main { max-width: 640px; margin: 0 auto; padding: 4px 16px 40px; }
+.lapor-body .topbar { justify-content: space-between; background: color-mix(in srgb, var(--surface-0) 85%, transparent); }
+
+.cabang-toggle {
+  display: flex; gap: 2px; padding: 2px; margin: 4px 0 16px;
+  background: var(--surface-2); border-radius: 10px;
+}
+.cabang-toggle button {
+  flex: 1; padding: 9px 10px; border: 0; border-radius: 8px; cursor: pointer;
+  background: transparent; color: var(--text-secondary); font: inherit; font-size: .85rem; font-weight: 600;
+}
+.cabang-toggle button.is-active { background: var(--surface-1); color: var(--brand-ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+.lapor-grid { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+@media (min-width: 480px) { .lapor-grid { grid-template-columns: 1fr 1fr; } }
+
+.lapor-tile {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px 14px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  min-height: 148px; justify-content: center;
+}
+.lapor-tile .ikon { font-size: 34px; line-height: 1; }
+.lapor-tile .label { font-weight: 650; font-size: .92rem; }
+.lapor-tile button.aksi {
+  margin-top: 4px; width: 100%; padding: 10px; border-radius: 10px; border: 0;
+  background: var(--brand); color: #fff; font: inherit; font-size: .85rem; font-weight: 650; cursor: pointer;
+}
+.lapor-tile button.aksi:active { transform: scale(.97); }
+.lapor-tile.sudah { background: var(--brand-soft); border-color: color-mix(in srgb, var(--brand) 35%, var(--border)); }
+.lapor-tile.sudah .ikon { opacity: .55; }
+.lapor-tile .status-ok { color: var(--good); font-weight: 650; font-size: .82rem; }
+.lapor-tile .thumb {
+  width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; margin-top: 2px;
+}
+.lapor-tile .batalkan {
+  border: 0; background: none; color: var(--danger); font: inherit; font-size: .76rem;
+  font-weight: 600; padding: 4px; cursor: pointer;
+}
+.lapor-tile.terkunci { opacity: .45; }
+.lapor-tile .sibuk { font-size: .8rem; color: var(--text-muted); }
+
+.lapor-note { margin-top: 4px; text-align: center; line-height: 1.5; }
+
+.riwayat-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.riwayat-row:last-child { border-bottom: 0; }
+.riwayat-row img {
+  width: 44px; height: 44px; border-radius: 9px; object-fit: cover; flex: none;
+  background: var(--surface-2);
+}
+.riwayat-row .info { flex: 1; min-width: 0; }
+.riwayat-row .info b { display: block; font-size: .88rem; }
+.riwayat-row .info small { color: var(--text-muted); font-size: .74rem; }
+.riwayat-row .batal-badge { font-size: .72rem; color: var(--danger); font-weight: 600; }
+.riwayat-row .batalkan {
+  border: 0; background: none; color: var(--danger); font: inherit; font-size: .78rem;
+  font-weight: 600; padding: 6px 8px; cursor: pointer; flex: none;
+}

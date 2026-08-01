@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gaji Love Pet">
+<meta name="theme-color" content="#fcfcfb">
+<title>Gaji Karyawan — LOVE Pet Clinic</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ NAVIGASI: tab bar di HP, sidebar di desktop ============ -->
+  <nav class="tabbar no-print" id="tabs">
+    <div class="tabbar-brand">
+      <span class="brand-mark">🐾</span>
+      <span class="brand-text"><strong id="brandNama">LOVE Pet Clinic</strong><small>Penggajian</small></span>
+    </div>
+
+    <button class="tabitem is-active" data-view="dashboard">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20.2h18M6.5 20V11M12 20V4.5M17.5 20v-6"/></svg>
+      <span>Ringkasan</span>
+    </button>
+    <button class="tabitem" data-view="input">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.8 3.7a2 2 0 0 1 2.8 2.8L9.4 16.7l-3.6 1 1-3.6z"/><path d="M4 20.5h16"/></svg>
+      <span>Input</span>
+    </button>
+    <button class="tabitem" data-view="slip">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h9l4 4v14.4H6z"/><path d="M15 2.8v4.2h4"/><path d="M9 12h6M9 15.5h6"/></svg>
+      <span>Slip</span>
+    </button>
+    <button class="tabitem" data-view="tahunan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
+      <span>Rekap</span>
+    </button>
+    <button class="tabitem" data-view="kelola">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
+      <span>Kelola</span>
+    </button>
+
+    <div class="tabbar-foot">
+      <span class="cloud-status" id="cloudStatus" hidden></span>
+      <button class="icon-btn" id="themeToggle" title="Ganti tema" aria-label="Ganti tema">◐</button>
+    </div>
+  </nav>
+
+  <div class="content">
+
+    <!-- ============ HEADER ============ -->
+    <header class="topbar no-print">
+      <div class="brand mobile-only">
+        <span class="brand-mark">🐾</span>
+        <span class="brand-text"><strong id="brandNamaHp">LOVE Pet Clinic</strong><small>Penggajian &amp; Slip Gaji</small></span>
+      </div>
+      <div class="topbar-actions">
+        <label class="period-picker">
+          <span class="sr-only">Periode</span>
+          <select id="periodeSelect"></select>
+        </label>
+        <button class="icon-btn desktop-hide" id="themeToggleHp" title="Ganti tema" aria-label="Ganti tema">◐</button>
+      </div>
+    </header>
+
+    <main id="main">
+
+      <!-- ====================== RINGKASAN ====================== -->
+      <section class="view is-active" id="view-dashboard">
+        <div class="page-head">
+          <h1>Ringkasan</h1>
+          <p class="muted" id="dashSub"></p>
+        </div>
+
+        <div class="stat-row" id="statRow"></div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-head">
+              <h2>Total Gaji per Bulan</h2>
+              <p class="muted">Seluruh karyawan, tahun berjalan</p>
+            </div>
+            <div id="chartBulanan" class="chart-wrap"></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h2>Komposisi Pendapatan Bulan Ini</h2>
+              <p class="muted">Gaji tetap &amp; tunjangan vs bonus — sebelum potongan</p>
+            </div>
+            <div id="chartKomposisi" class="chart-wrap"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Karyawan — <span id="ringkasPeriode"></span></h2>
+            <p class="muted">Ketuk baris untuk membuka slip gajinya</p>
+          </div>
+          <div class="list" id="listRingkas"></div>
+          <div class="table-scroll desktop-only"><table class="tbl" id="tblRingkas"></table></div>
+        </div>
+      </section>
+
+      <!-- ====================== INPUT GAJI ====================== -->
+      <section class="view" id="view-input">
+        <div class="page-head">
+          <h1>Input Gaji</h1>
+          <p class="muted">Isi jumlah performanya saja — gaji dihitung &amp; tersimpan otomatis.</p>
+        </div>
+
+        <div class="segmented" id="segInput" role="tablist">
+          <button class="seg is-active" data-seg="performa" role="tab">Performa</button>
+          <button class="seg" data-seg="rinci" role="tab">Gaji &amp; Potongan</button>
+        </div>
+
+        <div class="toolbar">
+          <button class="btn btn-primary" id="btnSalinBulanLalu">Salin bulan lalu</button>
+          <button class="btn" id="btnTarikLaporan" title="Tarik jumlah lembur/rawat inap/styling/operasi yang dilaporkan karyawan lewat lapor.html">Tarik laporan karyawan</button>
+          <button class="btn" id="btnTambahBaris">Tambah karyawan</button>
+          <button class="btn" id="btnResetBulan">Kosongkan</button>
+          <span class="grow"></span>
+          <span class="save-hint" id="saveHint"></span>
+        </div>
+
+        <div id="inputKosong" class="segpane"></div>
+
+        <div id="inputPerforma" class="segpane is-active">
+          <div id="perfCards" class="emp-cards mobile-cards"></div>
+          <div class="card desktop-only-block">
+            <div class="card-head">
+              <h2>Input performa bulanan</h2>
+              <p class="muted">Isi jumlah per cabang — kolom gaji di kanan ikut berubah</p>
+            </div>
+            <div class="table-scroll" id="perfTable"></div>
+          </div>
+        </div>
+
+        <div id="inputRinci" class="segpane emp-cards"></div>
+
+        <div class="card total-card">
+          <span>Total dibayarkan bulan ini</span>
+          <strong id="inputTotal">Rp 0</strong>
+        </div>
+      </section>
+
+      <!-- ====================== SLIP GAJI ====================== -->
+      <section class="view" id="view-slip">
+        <div class="page-head no-print">
+          <h1>Slip Gaji</h1>
+          <p class="muted">Pilih karyawan, lalu cetak atau simpan sebagai PDF.</p>
+        </div>
+
+        <div class="toolbar no-print">
+          <label class="field inline seg-select">
+            <span>Karyawan</span>
+            <select id="slipKaryawan"></select>
+          </label>
+        </div>
+        <div class="toolbar no-print">
+          <button class="btn btn-primary" id="btnCetakSlip">Cetak / PDF</button>
+          <button class="btn" id="btnCetakSemua">Cetak semua</button>
+          <button class="btn" id="btnSalinWA">Salin teks WA</button>
+        </div>
+
+        <div id="slipArea"></div>
+      </section>
+
+      <!-- ====================== REKAP TAHUNAN ====================== -->
+      <section class="view" id="view-tahunan">
+        <div class="page-head">
+          <h1>Rekap <span id="tahunChip" class="chip"></span></h1>
+          <p class="muted">Total pengeluaran gaji sepanjang tahun.</p>
+        </div>
+
+        <div class="stat-row" id="statTahun"></div>
+
+        <div class="card">
+          <div class="card-head"><h2>Total Diterima per Karyawan (setahun)</h2></div>
+          <div id="chartKaryawan" class="chart-wrap"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Matriks Gaji per Bulan</h2>
+            <p class="muted">Geser ke samping untuk melihat semua bulan</p>
+          </div>
+          <div class="table-scroll">
+            <table class="tbl" id="tblTahunan"></table>
+          </div>
+          <div class="card-foot no-print">
+            <button class="btn" id="btnExportCsv">Unduh CSV</button>
+            <button class="btn" id="btnCetakRekap">Cetak rekap</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Tren Bonus vs Gaji Tetap</h2>
+            <p class="muted">Porsi bonus tiap bulan</p>
+          </div>
+          <div id="chartTren" class="chart-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ====================== KELOLA ====================== -->
+      <section class="view" id="view-kelola">
+        <div class="page-head">
+          <h1>Kelola</h1>
+        </div>
+
+        <div class="segmented" id="segKelola" role="tablist">
+          <button class="seg is-active" data-seg="karyawan" role="tab">Karyawan</button>
+          <button class="seg" data-seg="pengaturan" role="tab">Pengaturan</button>
+        </div>
+
+        <div id="seg-karyawan" class="segpane is-active">
+          <div class="toolbar">
+            <button class="btn btn-primary" id="btnTambahKaryawan">Karyawan baru</button>
+          </div>
+          <div id="karyawanList" class="emp-cards"></div>
+        </div>
+
+        <div id="seg-pengaturan" class="segpane">
+          <div class="card">
+            <div class="card-head"><h2>Identitas Klinik</h2><p class="muted">Tampil di kepala slip gaji</p></div>
+            <div class="form-grid" id="formProfil"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Nama Cabang</h2><p class="muted">Dipakai di halaman input performa</p></div>
+            <div class="form-grid" id="formCabang"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h2>Tarif Bonus Default per Posisi</h2>
+              <p class="muted">Dipakai otomatis saat menambah karyawan ke bulan baru</p>
+            </div>
+            <div class="table-scroll">
+              <table class="tbl" id="tblTarif"></table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Akun &amp; Sinkronisasi</h2><p class="muted" id="akunKet">—</p></div>
+            <div class="card-foot">
+              <button class="btn" id="btnKeluar">Keluar dari akun</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Cadangan Data</h2><p class="muted">Simpan salinan di luar aplikasi sebagai jaring pengaman.</p></div>
+            <div class="card-foot">
+              <button class="btn btn-primary" id="btnBackup">Unduh cadangan</button>
+              <label class="btn" for="fileRestore">Pulihkan dari file</label>
+              <input type="file" id="fileRestore" accept="application/json" hidden>
+              <button class="btn btn-danger" id="btnFactory">Kembalikan data awal</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ====================== LAYAR MASUK ====================== -->
+<div class="login-overlay no-print" id="loginOverlay" hidden>
+  <form class="login-card" id="loginForm">
+    <div class="login-mark">🐾</div>
+    <h2>LOVE Pet Clinic</h2>
+    <p class="muted">Masuk untuk menyamakan data di iPhone dan MacBook.</p>
+
+    <label class="field"><span class="f-label">Email</span>
+      <input type="email" id="loginEmail" autocomplete="username" required placeholder="nama@email.com">
+    </label>
+    <label class="field"><span class="f-label">Kata sandi</span>
+      <input type="password" id="loginSandi" autocomplete="current-password" required minlength="6">
+    </label>
+
+    <p class="login-error" id="loginError" hidden></p>
+
+    <button type="submit" class="btn btn-primary btn-block" id="loginSubmit">Masuk</button>
+    <div class="login-links">
+      <button type="button" class="linkish" id="loginDaftar">Buat akun baru</button>
+      <button type="button" class="linkish" id="loginLupa">Lupa sandi</button>
+    </div>
+    <button type="button" class="linkish sub" id="loginLokal">Pakai tanpa akun (data hanya di perangkat ini)</button>
+  </form>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="printArea" class="print-only"></div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script type="module" src="js/cloud.js"></script>
+<script type="module" src="js/provisioning.js"></script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>
