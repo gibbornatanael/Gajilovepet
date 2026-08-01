@@ -724,6 +724,29 @@ $('#btnCetakSemua').addEventListener('click', () => {
   if (!data.length) { toast('Belum ada data bulan ini'); return; }
   cetak(data.map(htmlSlip).join(''));
 });
+/* Unduh slip sebagai gambar PNG — html2canvas dimuat hanya saat dipakai
+   (lazy import), supaya aplikasi tetap ringan kalau tombol ini tak disentuh. */
+$('#btnUnduhGambar').addEventListener('click', async () => {
+  const r = rows(periode).find((x) => x.empId === $('#slipKaryawan').value);
+  if (!r) { toast('Pilih karyawan dulu'); return; }
+  const tombol = $('#btnUnduhGambar');
+  tombol.disabled = true; tombol.textContent = 'Menyiapkan…';
+  try {
+    const { default: html2canvas } = await import('https://esm.sh/html2canvas@1.4.1');
+    const node = $('#slipArea .slip');
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `slip-${r.nama.replace(/\s+/g, '-')}-${periode}.png`;
+    a.click();
+    toast('Gambar diunduh');
+  } catch (e) {
+    console.error(e);
+    toast('Gagal membuat gambar: ' + (e.message || e));
+  } finally {
+    tombol.disabled = false; tombol.textContent = 'Unduh gambar (PNG)';
+  }
+});
 $('#btnSalinWA').addEventListener('click', async () => {
   const r = rows(periode).find((x) => x.empId === $('#slipKaryawan').value);
   if (!r) { toast('Pilih karyawan dulu'); return; }
