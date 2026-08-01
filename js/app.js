@@ -304,6 +304,41 @@ function renderDashboard() {
         <td class="num">${rp(bonus)}</td><td class="num">${rp(potong)}</td><td class="num">${rp(total)}</td>
       </tr></tfoot>`;
   }
+
+  renderRekapPerforma(data);
+}
+
+/* Rekap performa: jumlah tiap komponen bonus per karyawan bulan ini —
+   dipakai untuk menilai kinerja (bukan sekadar nominal rupiah). Sorot
+   nilai tertinggi tiap kolom supaya cepat terlihat siapa yang unggul. */
+function renderRekapPerforma(data) {
+  const el = $('#tblPerforma');
+  if (!data.length) { el.innerHTML = '<div class="empty">Belum ada data performa untuk periode ini.</div>'; return; }
+
+  const komp = KOMPONEN;
+  const maxTiapKolom = komp.map((k) => Math.max(0, ...data.map((r) => qtyTotal(r, k.id))));
+
+  el.innerHTML = `
+    <table class="tbl">
+      <thead><tr>
+        <th>Karyawan</th>
+        ${komp.map((k) => `<th class="num">${k.ikon || ''} ${esc(k.label)}</th>`).join('')}
+        <th class="num">Total Poin</th>
+      </tr></thead>
+      <tbody>${data.map((r) => {
+        const nilai = komp.map((k) => qtyTotal(r, k.id));
+        const totalPoin = nilai.reduce((s, v) => s + v, 0);
+        return `<tr>
+          <td>${esc(r.nama)}</td>
+          ${komp.map((k, i) => {
+            const v = nilai[i];
+            const top = v > 0 && v === maxTiapKolom[i];
+            return `<td class="num${top ? ' top-performa' : ''}">${v || '—'}</td>`;
+          }).join('')}
+          <td class="num"><b>${totalPoin}</b></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
 }
 
 /* Ketuk baris ringkasan (daftar HP atau tabel desktop) → buka slipnya */

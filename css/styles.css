@@ -334,6 +334,7 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 .tbl tbody tr:hover td, .tbl tbody tr:hover td:first-child { background: var(--surface-2); }
 .tbl tfoot td { font-weight: 700; border-top: 2px solid var(--border-strong); }
 .tbl .num { font-variant-numeric: tabular-nums; }
+.tbl .top-performa { color: var(--good, #1a9c6b); font-weight: 700; }
 .row-click { cursor: pointer; }
 .badge {
   display: inline-block; font-size: .7rem; font-weight: 600; padding: 2px 8px;

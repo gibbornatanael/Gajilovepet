@@ -82,6 +82,7 @@ async function onAuthBerubah(user) {
     tampilkanLogin(false);
     $('#namaKaryawan').textContent = `${profil.nama} · ${profil.role}`;
     setStatus('Tersinkron', 'ok');
+    renderAyatHarian();
 
     await muatStatusHariIni();
     renderCabangToggle();
@@ -133,6 +134,14 @@ function pesanGalat(err) {
   if (kode.includes('too-many-requests')) return 'Terlalu banyak percobaan. Coba lagi beberapa menit.';
   if (kode.includes('network')) return 'Tidak ada koneksi internet.';
   return 'Gagal masuk: ' + (err && err.message ? err.message : kode || 'tidak diketahui');
+}
+
+/* ----------------------------- Ayat harian ----------------------------- */
+function renderAyatHarian() {
+  const el = $('#ayatHarian');
+  if (!el || !window.ayatHariIni) return;
+  const a = window.ayatHariIni();
+  el.innerHTML = `<div class="ayat-ikon">📖</div><div class="ayat-teks">“${esc(a.teks)}”<span class="ayat-ref">${esc(a.ref)}</span></div>`;
 }
 
 /* --------------------------- Cabang toggle --------------------------- */

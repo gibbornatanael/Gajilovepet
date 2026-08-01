@@ -52,6 +52,8 @@
   </header>
 
   <main id="main">
+    <div class="ayat-card" id="ayatHarian"></div>
+
     <div class="segmented" id="segLapor" role="tablist">
       <button class="seg is-active" data-seg="lapor" role="tab">Lapor</button>
       <button class="seg" data-seg="capaian" role="tab">Capaian</button>
@@ -93,6 +95,7 @@
 
 <script src="js/firebase-config.js"></script>
 <script src="js/data.js"></script>
+<script src="js/ayat.js"></script>
 <script type="module" src="js/lapor.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

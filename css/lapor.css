@@ -66,3 +66,16 @@
   border: 0; background: none; color: var(--danger); font: inherit; font-size: .78rem;
   font-weight: 600; padding: 6px 8px; cursor: pointer; flex: none;
 }
+
+/* ---------------------------- Ayat harian ---------------------------- */
+.ayat-card {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: linear-gradient(135deg, var(--brand, #0f7a6c) 0%, #0b5c52 100%);
+  color: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
+}
+.ayat-ikon { font-size: 1.3rem; line-height: 1; flex: none; }
+.ayat-teks { font-size: .85rem; line-height: 1.5; font-style: italic; }
+.ayat-teks .ayat-ref {
+  display: block; margin-top: 6px; font-style: normal; font-weight: 700;
+  font-size: .76rem; opacity: .9;
+}
