@@ -129,7 +129,7 @@ function hitung(row) {
     const nilai = q * r;
     bonus[k.id] = nilai;
     totalBonus += nilai;
-    return { label: k.slip, nilai, ket: q ? `${q} ${k.satuan} × ${rp(r)}` : '' };
+    return { label: k.slip, nilai };
   });
 
   const pendapatan = [
