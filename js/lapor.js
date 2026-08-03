@@ -33,19 +33,42 @@ function tampilkanLogin(tampil, pesan) {
 }
 
 /* ------------------------------- Mulai ------------------------------- */
+// Pasang penjaga di form SEBELUM Firebase selesai dimuat. Tanpa ini, kalau
+// pemuatan SDK Firebase dari gstatic.com gagal/lambat (mis. diblokir WiFi
+// klinik), klik "Masuk" akan memicu submit form HTML biasa (form tidak
+// punya atribut action) — browser reload halaman ke URL yang sama, yang
+// dari sisi pengguna terlihat seperti "tidak terjadi apa-apa".
+let siap = false;
+$('#loginForm').addEventListener('submit', (e) => {
+  if (!siap) {
+    e.preventDefault();
+    tampilkanLogin(true, 'Masih menyiapkan koneksi, coba lagi sesaat…');
+  }
+});
+
 if (!CFG.apiKey || !CFG.projectId) {
   tampilkanLogin(true, 'Aplikasi ini belum tersambung ke server. Hubungi pemilik klinik.');
   $('#loginSubmit').disabled = true;
 } else {
-  mulai();
+  mulai().catch((e) => {
+    console.error('Gagal memuat Firebase:', e);
+    tampilkanLogin(true, 'Gagal terhubung ke server. Coba ganti jaringan (mis. data seluler, bukan WiFi klinik) lalu muat ulang halaman.');
+  });
+}
+
+function timeout(ms, pesan) {
+  return new Promise((_, reject) => setTimeout(() => reject(new Error(pesan)), ms));
 }
 
 async function mulai() {
   const V = 'https://www.gstatic.com/firebasejs/10.12.2';
-  const [{ initializeApp }, aM, fM] = await Promise.all([
-    import(`${V}/firebase-app.js`),
-    import(`${V}/firebase-auth.js`),
-    import(`${V}/firebase-firestore.js`),
+  const [{ initializeApp }, aM, fM] = await Promise.race([
+    Promise.all([
+      import(`${V}/firebase-app.js`),
+      import(`${V}/firebase-auth.js`),
+      import(`${V}/firebase-firestore.js`),
+    ]),
+    timeout(15000, 'Waktu tunggu habis saat memuat Firebase — jaringan mungkin memblokir gstatic.com'),
   ]);
   authMod = aM; fsMod = fM;
   // Nama instance khusus ("karyawan") supaya sesi login karyawan di sini
@@ -69,6 +92,8 @@ async function mulai() {
     });
   } catch { db = fsMod.getFirestore(app); }
 
+  siap = true;
+  tampilkanLogin(true);   // bersihkan pesan "menyiapkan koneksi" kalau ada
   pasangForm();
   authMod.onAuthStateChanged(auth, onAuthBerubah);
 }
