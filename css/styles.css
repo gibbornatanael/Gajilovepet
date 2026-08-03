@@ -533,7 +533,10 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
   @page { size: A4 portrait; margin: 12mm; }
   body { background: #fff; font-size: 11pt; }
   .no-print, .tabbar, .topbar, .toolbar, .toast { display: none !important; }
-  .app { display: block; }
+  /* .app/.content setinggi layar (100vh). Kalau tingginya dibiarkan saat
+     mencetak, isi cetakan terdorong ke halaman kedua dan halaman pertama
+     keluar kosong — karena itu tingginya dinolkan di sini. */
+  .app, .content { display: block; min-height: 0; height: auto; }
   main { padding: 0; max-width: none; }
   .view { display: none !important; }
   .print-only { display: block !important; }
@@ -544,4 +547,153 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
   .slip:last-child { page-break-after: auto; break-after: auto; }
   .card { box-shadow: none; border: 1px solid #ccc; }
   .tbl { min-width: 0; font-size: 9pt; }
+}
+
+/* =========================================================================
+   NOTA / PENGELUARAN
+   Daftar sengaja ringkas: satu baris per nota, rinciannya dibentang saat
+   diketuk. Di kertas (@media print) semua rincian selalu ikut tercetak.
+   ========================================================================= */
+
+/* Lencana kecil di tab "Nota" — memberi tahu ada foto menunggu diarsipkan */
+.tabitem { position: relative; }
+.tab-badge {
+  position: absolute; top: 2px; left: 50%; margin-left: 6px;
+  min-width: 17px; height: 17px; padding: 0 4px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 9px; background: var(--danger); color: #fff;
+  font-size: .6rem !important; font-weight: 700; line-height: 1;
+}
+.tab-badge[hidden] { display: none; }   /* display:flex di atas mengalahkan [hidden] */
+
+.nota-banner {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  background: var(--brand-soft); border: 1px solid var(--brand);
+  border-radius: var(--radius); padding: 13px 15px; margin-bottom: 14px;
+}
+.nota-banner > div { flex: 1; min-width: 220px; }
+.nota-banner p { margin: 3px 0 0; font-size: .82rem; }
+.nota-banner code { font-size: .8em; }
+
+.nota-sibuk { font-size: .78rem; color: var(--text-secondary); }
+
+.nota-list { display: flex; flex-direction: column; gap: 8px; }
+
+.nota-row {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); overflow: hidden;
+}
+.nota-row.is-open { border-color: var(--border-strong); box-shadow: var(--shadow); }
+
+.nota-head {
+  width: 100%; display: grid; align-items: center; gap: 4px 10px;
+  grid-template-columns: auto 1fr auto auto;
+  grid-template-areas: "tgl judul total kar" "tgl status status kar";
+  padding: 11px 13px; border: 0; background: none; cursor: pointer;
+  font: inherit; color: inherit; text-align: left;
+}
+.nota-head:active { background: var(--surface-2); }
+.nota-tgl {
+  grid-area: tgl; font-size: .72rem; font-weight: 600; color: var(--text-muted);
+  width: 4.6em; line-height: 1.25;
+}
+.nota-judul { grid-area: judul; min-width: 0; display: block; }
+.nota-judul strong {
+  display: block; font-size: .95rem; letter-spacing: -.012em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nota-judul small { display: block; font-size: .74rem; color: var(--text-muted); }
+.nota-total { grid-area: total; font-weight: 700; font-size: .92rem; white-space: nowrap; }
+.nota-kar {
+  grid-area: kar; color: var(--text-muted); font-size: 1.15rem;
+  transition: transform .18s;
+}
+.nota-row.is-open .nota-kar { transform: rotate(90deg); }
+
+.nota-status {
+  grid-area: status; justify-self: start;
+  font-size: .68rem; font-weight: 650; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.nota-status.s-abu    { background: var(--surface-2); color: var(--text-muted); }
+.nota-status.s-kuning { background: color-mix(in srgb, var(--series-2) 16%, transparent); color: var(--series-2); }
+.nota-status.s-hijau  { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
+.nota-status.s-merah  { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+
+.nota-detail { padding: 0 13px 13px; border-top: 1px solid var(--border); }
+.nota-detail > *:first-child { margin-top: 11px; }
+/* Berbeda dari .tbl biasa: rincian nota harus muat di layar HP tanpa
+   digeser, jadi min-width dilepas dan nama barang boleh turun baris. */
+.nota-items { font-size: .8rem; min-width: 0; }
+.nota-items th, .nota-items td { padding: 6px 7px; }
+.nota-items th:first-child, .nota-items td:first-child { white-space: normal; }
+.nota-items .ka { text-align: right; white-space: nowrap; }
+
+.nota-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 11px 0; }
+.nota-meta dt { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.nota-meta dd { margin: 1px 0 0; font-size: .85rem; }
+
+.nota-foto { display: block; max-width: 260px; }
+.nota-foto img {
+  width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border);
+}
+.nota-aksi { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.nota-aksi .field.inline span { font-size: .75rem; color: var(--text-muted); }
+
+/* --- Dialog periksa hasil AI / ubah nota --- */
+.nota-dialog {
+  position: fixed; inset: 0; z-index: 60; overflow-y: auto;
+  background: rgba(0,0,0,.45); padding: 18px;
+  display: flex; align-items: flex-start; justify-content: center;
+}
+.nota-dialog[hidden] { display: none; }
+.nota-card {
+  background: var(--surface-1); border-radius: var(--radius);
+  padding: 20px; width: min(640px, 100%); box-shadow: var(--shadow);
+  margin: auto;
+}
+.nota-card h2 { margin: 0 0 3px; }
+.nota-card h3 { margin: 0; font-size: .95rem; }
+.nota-card .card-head { margin: 18px 0 8px; padding: 0; }
+.nota-item {
+  display: grid; gap: 6px; align-items: center; margin-bottom: 6px;
+  grid-template-columns: 1fr 3.2em 6em 6em auto;
+}
+.nota-item input {
+  padding: 7px 9px; font-size: .82rem; min-width: 0;
+  border: 1px solid var(--border); border-radius: 9px;
+  background: var(--surface-0); color: var(--text-primary);
+}
+.nota-pratinjau {
+  display: block; max-width: 220px; margin-top: 14px;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+}
+.nota-dialog-aksi { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+@media (max-width: 560px) {
+  /* Satu barang jadi blok dua baris: nama + tombol hapus di atas,
+     qty / harga / jumlah di bawahnya. */
+  .nota-item {
+    grid-template-columns: 1fr 1fr 1fr auto;
+    grid-template-areas: "nama nama nama x" "qty harga sub sub";
+    padding-bottom: 8px; margin-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nota-item:last-child { border-bottom: 0; }
+  .nota-item input:nth-child(1) { grid-area: nama; }
+  .nota-item input:nth-child(2) { grid-area: qty; }
+  .nota-item input:nth-child(3) { grid-area: harga; }
+  .nota-item input:nth-child(4) { grid-area: sub; }
+  .nota-item [data-hapus-item] { grid-area: x; }
+  /* Status mengambil satu baris penuh, Ubah & Hapus berdampingan di bawahnya */
+  .nota-aksi .field.inline { width: 100%; }
+  .nota-aksi .field.inline select { flex: 1; }
+  .nota-aksi .grow { display: none; }
+}
+
+@media print {
+  /* Cetakan nota: rincian barang selalu lengkap, tidak ada yang dilipat */
+  .nota-cetak { width: 100%; margin-bottom: 10px; page-break-inside: avoid; break-inside: avoid; }
+  .nota-cetak th, .nota-cetak td { border: 1px solid #ccc; padding: 3px 6px; text-align: left; }
+  .nota-cetak thead th { background: #f0f0f0; }
 }

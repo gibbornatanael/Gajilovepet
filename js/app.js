@@ -113,6 +113,10 @@ window.LovePet = {
     if (!state.payroll[periode]) periode = periodeTerakhir();
     render();
   },
+  /* Dipakai js/nota.js — ia sebuah module, jadi tidak bisa memanggil
+     fungsi di berkas ini secara langsung. */
+  toast: (m) => toast(m),
+  cetak: (html) => cetak(html),
 };
 
 function periodeTerakhir() {
@@ -144,7 +148,7 @@ function kunciTahun(y) {
 function totalBulan(key) { return rows(key).reduce((s, r) => s + hitung(r).total, 0); }
 
 /* ============================ NAVIGASI ============================ */
-const VIEWS = ['dashboard', 'input', 'slip', 'tahunan', 'kelola'];
+const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'tahunan', 'kelola'];
 
 function pindahView(nama) {
   // alias lama supaya tautan #karyawan / #pengaturan tetap jalan

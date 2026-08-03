@@ -15,7 +15,7 @@ Data **Januari–Juli 2026** sudah terisi persis seperti di file Numbers.
 ## Tampilan
 
 - **Di HP** — tab bar di bagian bawah layar seperti aplikasi iPhone:
-  *Ringkasan · Input · Slip · Rekap · Kelola*. Judul besar di tiap halaman,
+  *Ringkasan · Input · Slip · Nota · Rekap · Kelola*. Judul besar di tiap halaman,
   daftar karyawan yang bisa diketuk, dan kolom isian sudah 16px supaya layar
   tidak ikut nge-zoom saat mengetik.
 - **Di desktop** — menu yang sama tampil sebagai sidebar di kiri.
@@ -106,6 +106,40 @@ dihapus datanya, hanya fotonya) setelah 90 hari, dijalankan diam-diam setiap
 kali aplikasi pemilik atau karyawan dibuka — bukan jadwal pasti tengah malam,
 tapi cukup untuk menjaga ukuran database tetap kecil.
 
+## Pencatatan pengeluaran — tab **Nota**
+
+Foto nota difoto/diunggah, lalu dibaca AI (Google Gemini) menjadi baris
+pengeluaran: **tanggal, toko, total, kategori, metode bayar, dan rincian
+barang per item**. Hasil bacaannya selalu ditampilkan dulu untuk diperiksa
+dan dikoreksi sebelum tersimpan — AI tidak pernah menyimpan diam-diam.
+
+Setiap nota punya kolom **Status**: *Kosong* (bawaan) · *Belum kirim Risa* ·
+*Terkirim ke Risa* · *Untuk ditahan*. Statusnya bisa diubah kapan saja
+langsung dari daftar.
+
+Daftarnya sengaja ringkas — satu baris per nota. **Ketuk barisnya** untuk
+membentangkan rincian barang, foto, dan tombol Ubah/Hapus. Tombol
+**Cetak / PDF** mencetak semuanya lengkap dengan rincian tiap barang,
+mengikuti filter bulan & status yang sedang aktif.
+
+Ada dua cara memasukkan nota:
+
+| Cara | Langkah |
+|---|---|
+| **Dari aplikasi** | tab Nota → **Unggah nota** → potret/pilih foto → periksa hasilnya → pilih status → Simpan |
+| **Dari Telegram** | forward foto nota ke grup → bot membalas ringkasan + 4 tombol status → tekan satu → bot menjawab "✅ Tersimpan" (atau menjelaskan kalau gagal) |
+
+Kalau AI sedang tidak bisa dipakai, tombol **Catat manual** membuka formulir
+yang sama untuk diisi tangan.
+
+**Umur foto: 1 bulan.** Setelah bulannya lewat, foto tidak dihapus begitu
+saja — muncul spanduk di tab Nota (dan angka merah kecil di ikon tabnya)
+yang menawarkan mengunduh `nota-2026-07.zip` berisi seluruh fotonya +
+`daftar.csv`. Foto baru dilepas dari penyimpanan **setelah** ZIP-nya
+terunduh. Baris notanya sendiri tetap tersimpan selamanya.
+
+Cara memasang kunci AI dan bot Telegram ada di **PANDUAN-DEPLOY.md bagian E**.
+
 ## Catatan hasil pemeriksaan file Numbers
 
 Semua total per karyawan Januari–Juni **sama persis** dengan file Numbers.
@@ -166,12 +200,19 @@ js/app.js                    logika aplikasi pemilik: input, slip, rekap
 js/cloud.js                  sinkronisasi Firebase aplikasi pemilik (opsional)
 js/provisioning.js           pemilik membuat akun login karyawan
 js/lapor.js                  logika aplikasi karyawan
+js/nota.js                   pencatatan pengeluaran: unggah nota, arsip ZIP, cetak
+functions/_lib/gemini.js     pembacaan foto nota oleh AI (jalan di server Cloudflare)
+functions/api/nota.js        endpoint untuk tombol "Unggah nota"
+functions/api/telegram.js    webhook bot Telegram
 js/firebase-config.js        ← isi ini untuk mengaktifkan sinkronisasi & lapor.html
 firestore.rules              aturan keamanan database — wajib dipasang
 manifest.webmanifest         agar index.html bisa dipasang di Home Screen
 manifest-lapor.webmanifest   agar lapor.html bisa dipasang di Home Screen
 sw.js                        agar kedua aplikasi tetap terbuka tanpa internet
-_headers                      header keamanan untuk Cloudflare Pages
+_headers                      header keamanan (dibaca Cloudflare)
+wrangler.jsonc                konfigurasi Worker "lovepetcrew" — berkas statis + /api/*
+worker.js                     titik masuk Worker: merutekan /api/* , sisanya berkas statis
+.assetsignore                 berkas yang TIDAK ikut disajikan publik (functions/, .git, dst.)
 PANDUAN-DEPLOY.md            langkah GitHub → Firebase → Cloudflare
 ```
 

@@ -1,0 +1,22 @@
+{
+  // Konfigurasi Worker "lovepetcrew" — dibaca oleh "npx wrangler deploy"
+  // (perintah yang sudah dipasang di Cloudflare → Settings → Build).
+  // Sebelumnya project ini berjalan tanpa berkas ini sama sekali
+  // (Cloudflare menyimpan konfigurasi bawaannya sendiri saat situs
+  // pertama kali diimpor sebagai "situs statis"); berkas ini menggantinya
+  // secara eksplisit supaya /api/nota dan /api/telegram bisa ditambahkan.
+  "name": "lovepetcrew",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-03",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Seluruh isi repo dilayani sebagai berkas statis (index.html, lapor.html,
+  // css/, js/, icons/, dst.) — sama seperti sebelumnya. Berkas yang tidak
+  // perlu ikut disajikan (functions/, worker.js sendiri, dsb.) didaftarkan
+  // di .assetsignore.
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
+  }
+}

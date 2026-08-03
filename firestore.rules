@@ -62,6 +62,14 @@ service cloud.firestore {
       allow delete: if isPemilik();
     }
 
+    // Catatan pengeluaran (foto nota yang dibaca AI).
+    // Hanya pemilik — karyawan tidak pernah menyentuh koleksi ini.
+    // Bot Telegram menulis lewat REST API memakai akun pemilik yang sama,
+    // jadi tidak perlu pengecualian khusus di sini.
+    match /klinik/{klinikId}/nota/{notaId} {
+      allow read, write: if isPemilik();
+    }
+
     // Semua jalur lain ditolak
     match /{document=**} {
       allow read, write: if false;

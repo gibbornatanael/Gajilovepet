@@ -36,6 +36,11 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h9l4 4v14.4H6z"/><path d="M15 2.8v4.2h4"/><path d="M9 12h6M9 15.5h6"/></svg>
       <span>Slip</span>
     </button>
+    <button class="tabitem" data-view="nota">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 2.8h13v18.4l-2.2-1.5-2.2 1.5-2.1-1.5-2.2 1.5-2.1-1.5-2.2 1.5z"/><path d="M9 7.8h6M9 11.8h6"/></svg>
+      <span>Nota</span>
+      <span class="tab-badge" hidden></span>
+    </button>
     <button class="tabitem" data-view="tahunan">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
       <span>Rekap</span>
@@ -179,6 +184,45 @@
         <div id="slipArea"></div>
       </section>
 
+      <!-- ====================== NOTA / PENGELUARAN ====================== -->
+      <section class="view" id="view-nota">
+        <div class="page-head">
+          <h1>Pengeluaran</h1>
+          <p class="muted">Unggah foto nota — AI mencatatkan isinya. Ketuk baris untuk melihat rinciannya.</p>
+        </div>
+
+        <div class="nota-banner" id="notaArsip" hidden></div>
+
+        <div class="stat-row" id="notaStat"></div>
+
+        <div class="toolbar no-print">
+          <button class="btn btn-primary" id="btnUnggahNota">Unggah nota</button>
+          <input type="file" id="notaFile" accept="image/*" capture="environment" hidden>
+          <button class="btn" id="btnNotaManual">Catat manual</button>
+          <button class="btn" id="btnCetakNota">Cetak / PDF</button>
+          <span class="grow"></span>
+          <span class="nota-sibuk" id="notaSibuk" hidden></span>
+        </div>
+
+        <div class="toolbar no-print">
+          <label class="field inline seg-select"><span>Bulan</span>
+            <select id="notaPeriode"><option value="semua">Semua bulan</option></select>
+          </label>
+          <label class="field inline seg-select"><span>Status</span>
+            <select id="notaStatus">
+              <option value="semua">Semua status</option>
+              <option value="">Kosong</option>
+              <option value="belum">Belum kirim Risa</option>
+              <option value="terkirim">Terkirim ke Risa</option>
+              <option value="tahan">Untuk ditahan</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="notaKosong"></div>
+        <div id="notaList" class="nota-list"></div>
+      </section>
+
       <!-- ====================== REKAP TAHUNAN ====================== -->
       <section class="view" id="view-tahunan">
         <div class="page-head">
@@ -305,12 +349,14 @@
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div id="printArea" class="print-only"></div>
+<div class="nota-dialog no-print" id="notaDialog" hidden></div>
 
 <script src="js/firebase-config.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script type="module" src="js/cloud.js"></script>
 <script type="module" src="js/provisioning.js"></script>
+<script type="module" src="js/nota.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

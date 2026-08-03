@@ -151,22 +151,26 @@ ini.
 
 ---
 
-## C. Cloudflare Pages
+## C. Cloudflare
 
-1. Buka <https://dash.cloudflare.com> → menu **Workers & Pages** →
-   **Create** → tab **Pages** → **Connect to Git**
-2. Hubungkan akun GitHub, pilih repository `gaji-love-pet`
-3. Isi pengaturan build:
+> **Catatan (Agustus 2026):** project yang benar-benar melayani situs ini
+> adalah **Worker** bernama **`lovepetcrew`** (Compute → Workers & Pages →
+> lovepetcrew), memakai `npx wrangler deploy` — bukan Cloudflare **Pages**.
+> Kalau Anda mendirikan project baru, pilih **Workers**, bukan Pages, dan
+> ikuti langkah di bawah. Repo ini menyertakan `wrangler.jsonc` + `worker.js`
+> yang mengatur berkas apa saja yang disajikan sebagai situs statis dan
+> merutekan `/api/nota` & `/api/telegram` (lihat **bagian E**) — kedua
+> berkas itu WAJIB ikut di-push, wrangler membacanya otomatis saat deploy.
 
-   | Kolom | Isi |
-   |---|---|
-   | Framework preset | **None** |
-   | Build command | *(kosongkan)* |
-   | Build output directory | `/` |
-
-   Aplikasi ini HTML/CSS/JS biasa — tidak perlu proses build sama sekali.
+1. Buka <https://dash.cloudflare.com> → **Compute (Workers)** → **Workers & Pages**
+   → **Create** → **Workers** → **Connect to Git**
+2. Hubungkan akun GitHub, pilih repository ini
+3. Build command boleh dikosongkan — `wrangler.jsonc` di repo yang menentukan
+   semuanya (nama Worker, berkas mana yang statis, `worker.js` sebagai
+   penangan `/api/*`)
 4. **Save and Deploy**. Selesai dalam ±1 menit.
-5. Alamatnya akan seperti `https://gaji-love-pet.pages.dev`
+5. Alamatnya akan seperti `https://lovepetcrew.<akun-anda>.workers.dev`,
+   atau domain kustom kalau sudah dipasang (**Settings → Domains**)
 
 Setiap kali Anda `git push`, Cloudflare otomatis menerbitkan versi terbaru.
 
@@ -175,8 +179,7 @@ Setiap kali Anda `git push`, Cloudflare otomatis menerbitkan versi terbaru.
 Firebase menolak login dari alamat yang tidak dikenal:
 
 1. Firebase Console → **Authentication → Settings → Authorized domains**
-2. **Add domain** → masukkan `gaji-love-pet.pages.dev`
-   (dan domain sendiri, kalau nanti Anda pasang)
+2. **Add domain** → masukkan alamat `.workers.dev` (atau domain kustom) Anda
 
 ---
 
@@ -196,6 +199,127 @@ tersinkron begitu kembali online.
 
 ---
 
+## E. Pencatatan Pengeluaran (foto nota dibaca AI)
+
+Bagian ini mengaktifkan tab **Nota**. Aplikasi tetap jalan tanpanya — kalau
+langkah di bawah dilewati, tab Nota masih bisa dipakai lewat tombol
+**"Catat manual"**, hanya pembacaan otomatisnya yang mati.
+
+### E1. Ambil kunci AI (gratis, tanpa kartu kredit)
+
+1. Buka <https://aistudio.google.com/apikey> → masuk dengan akun Google
+2. **Create API key** → pilih project mana saja → salin kuncinya
+   (bentuknya seperti `AIza…`, panjang ~39 huruf)
+3. Simpan sementara di Notes. Kunci ini **jangan** ditaruh di dalam kode —
+   tempatnya di Cloudflare, langkah berikutnya.
+
+Kuota gratisnya jauh lebih dari cukup untuk klinik (ratusan nota per hari).
+
+### E2. Pasang kunci di Cloudflare
+
+⚠️ Project ini adalah **Worker** (`lovepetcrew`), bukan Pages — tempatnya
+**bukan** di Settings → Build → "Variables and secrets" (kotak itu hanya
+dibaca saat proses *build*, bukan saat `/api/nota` benar-benar dipanggil).
+
+**Cara paling gampang — lewat Terminal** (terbukti jalan, dialog dashboard
+"Add binding → Secrets Store" sering membingungkan/tidak tersimpan):
+
+```
+cd "/Users/gibbornatanael/Documents/Slip Gaji Love pet app"
+npx wrangler login          # sekali saja, kalau belum pernah
+npx wrangler secret put GEMINI_API_KEY
+```
+
+Saat diminta, tempel kunci dari **E1** (teks yang diketik tidak akan
+terlihat di layar — itu normal), lalu Enter. Muncul `✨ Success!` berarti
+sudah aktif — tidak perlu `git push` atau deploy ulang, secret langsung
+terpasang ke Worker `lovepetcrew` yang sedang jalan.
+
+<details>
+<summary>Alternatif lewat dashboard (kalau lebih suka tanpa Terminal)</summary>
+
+Cloudflare → **Workers & Pages** → **lovepetcrew** → tab **Bindings** →
+**Add binding** → **Secrets Store** → **Add Binding** → di form yang
+muncul, kalau nilainya belum ada klik **Create secret** dulu (isi *Secret
+name* + *Value*), lalu di form binding isi **Variable name** persis
+`GEMINI_API_KEY` dan **Secret name** pilih yang baru dibuat → **Save**.
+Kalau setelah disimpan "Connected Bindings" tetap kosong, jangan buang
+waktu berulang — langsung pakai cara Terminal di atas, hasilnya sama.
+</details>
+
+Sesudah ini tombol **Unggah nota** di aplikasi sudah berfungsi. Cara
+memastikannya benar: buka `https://lovepetcrew.<akun-anda>.workers.dev/api/nota`
+langsung di browser — harus muncul `{"error":"Gunakan POST"}` (tanda
+endpoint-nya hidup), bukan halaman 404.
+
+### E3. Bot Telegram (opsional, tapi enak dipakai)
+
+1. Di Telegram, cari **@BotFather** → `/newbot` → beri nama & username
+   (harus berakhiran `bot`, mis. `notalovepet_bot`). BotFather membalas
+   dengan **token** — salin.
+2. Buat grup baru, masukkan bot itu ke dalamnya.
+3. Masih di BotFather: `/setprivacy` → pilih bot Anda → **Disable**.
+   Tanpa ini bot tidak melihat foto yang dikirim di grup.
+4. Pasang tujuh secret berikut lewat Terminal (cara sama seperti **E2** —
+   `npx wrangler secret put NAMA`, satu per satu, tempel nilainya saat
+   diminta):
+
+| Perintah | Tempel sebagai nilainya |
+|---|---|
+| `npx wrangler secret put TELEGRAM_BOT_TOKEN` | token dari BotFather |
+| `npx wrangler secret put TELEGRAM_SECRET` | kata rahasia karangan Anda, mis. `lovepet-rahasia-2026` |
+| `npx wrangler secret put TELEGRAM_CHAT_ID` | isi sementara `0`, diperbaiki di langkah 6 |
+| `npx wrangler secret put FIREBASE_API_KEY` | salin `apiKey` dari `js/firebase-config.js` |
+| `npx wrangler secret put FIREBASE_PROJECT_ID` | `gajilovepet` |
+| `npx wrangler secret put OWNER_EMAIL` | email yang Anda pakai masuk ke aplikasi |
+| `npx wrangler secret put OWNER_PASSWORD` | kata sandinya |
+
+5. Sambungkan bot ke aplikasi. Buka alamat ini sekali di browser
+   (ganti `TOKEN`, `ALAMAT-WORKER`, dan `RAHASIA` sesuai punya Anda —
+   `ALAMAT-WORKER` adalah alamat `lovepetcrew.<akun-anda>.workers.dev` atau
+   domain kustom Anda):
+
+   ```
+   https://api.telegram.org/botTOKEN/setWebhook?url=https://ALAMAT-WORKER/api/telegram&secret_token=RAHASIA
+   ```
+
+   Balasannya harus `{"ok":true,…}`.
+
+6. Di grup, ketik `/id`. Bot membalas id grupnya (angka negatif, mis.
+   `-1001234567890`). Ubah Secret `TELEGRAM_CHAT_ID` di Cloudflare menjadi
+   angka itu, **Save**, lalu **Retry deployment**. Ini yang mencegah orang
+   lain memakai bot Anda.
+
+**Cara pakai:** forward atau kirim foto nota ke grup → bot membalas
+ringkasannya + empat tombol status → tekan satu → bot menjawab
+"✅ Tersimpan". Notanya langsung muncul di tab Nota aplikasi.
+
+### E4. Tentang keamanan sandi pemilik
+
+`OWNER_PASSWORD` dipakai supaya bot bisa menulis atas nama Anda — dengan
+begitu `firestore.rules` tidak perlu dilonggarkan sama sekali. Sandi itu
+tersimpan sebagai **Secret** di Cloudflare (terenkripsi, tidak bisa dibaca
+lagi setelah disimpan, tidak ikut ke GitHub) dan tidak pernah dikirim ke
+Telegram maupun ke browser. Kalau suatu saat Anda ganti sandi aplikasi,
+perbarui juga Secret ini.
+
+### E5. Arsip foto bulanan
+
+Foto nota disimpan penuh selama **bulan berjalan + bulan sebelumnya belum
+diarsipkan**. Begitu bulannya lewat, di tab Nota muncul spanduk hijau dan
+angka merah kecil di ikon tab:
+
+> **Foto nota Juli 2026 siap diarsipkan** — 23 foto… **[Unduh ZIP]**
+
+Menekannya mengunduh `nota-2026-07.zip` (berisi semua fotonya + `daftar.csv`)
+**lalu baru** melepas foto itu dari Firestore. Jadi tidak ada foto yang hilang
+tanpa salinan. Baris notanya sendiri — tanggal, toko, total, rincian barang —
+tetap tersimpan selamanya dan tetap ikut tercetak di PDF.
+
+Simpan ZIP-nya di iCloud/Drive supaya aman.
+
+---
+
 ## Kalau ada masalah
 
 | Gejala | Penyebab & solusi |
@@ -209,6 +333,11 @@ tersinkron begitu kembali online.
 | “The query requires an index” di lapor.html / saat Tarik laporan | Normal sekali di awal — klik tautan di pesan error (F12 → tab Console), tekan Create di Firebase Console, tunggu ±1 menit |
 | Karyawan: “Akun ini belum terhubung ke data karyawan” | Akun dibuat tapi Kelola → Karyawan belum sempat tersinkron — buka aplikasi pemilik sebentar (memicu sinkron), lalu karyawan coba masuk lagi |
 | Kamera tidak terbuka saat tekan tombol lapor | Sebagian browser desktop membuka jendela pilih berkas biasa (bukan kamera) — ini normal, kamera asli hanya muncul di HP |
+| Nota: “AI tidak bisa membaca — silakan isi manual” | `GEMINI_API_KEY` belum diisi atau salah ketik (lihat **E2**), atau kuota harian habis. Formulirnya tetap terbuka, jadi bisa diisi tangan |
+| Bot Telegram diam saja saat difoto | Privacy mode masih aktif → BotFather `/setprivacy` → **Disable** (**E3** langkah 3), lalu keluarkan & masukkan lagi botnya ke grup |
+| Bot menjawab “Grup ini belum diizinkan” | `TELEGRAM_CHAT_ID` belum diperbarui — salin angka yang disebut bot ke Secret itu, Save, Retry deployment (**E3** langkah 6) |
+| Bot menjawab “Login Firebase gagal” | `OWNER_EMAIL` / `OWNER_PASSWORD` salah, atau sandi aplikasi baru diganti tanpa memperbarui Secret-nya |
+| Nota dari Telegram tidak muncul di aplikasi | Tarik layar untuk memuat ulang; kalau tetap kosong cek `FIREBASE_PROJECT_ID` sudah `gajilovepet` |
 
 ---
 

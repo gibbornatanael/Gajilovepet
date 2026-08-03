@@ -1,0 +1,11 @@
+# Berkas yang TIDAK ikut disajikan sebagai aset statis oleh Worker
+# (beda dari .gitignore — ini hanya soal apa yang dilayani lewat HTTP).
+functions/
+worker.js
+wrangler.jsonc
+.assetsignore
+.gitignore
+.git/
+node_modules/
+*.numbers
+.DS_Store
