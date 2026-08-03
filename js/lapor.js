@@ -53,6 +53,16 @@ async function mulai() {
   // yang sama di cloud.js.
   const app = initializeApp(CFG, 'karyawan');
   auth = authMod.getAuth(app);
+
+  // Gunakan SESSION persistence supaya session karyawan di lapor.html
+  // tidak tercampur dengan local cache pemilik. Session akan hilang
+  // saat browser/tab ditutup.
+  try {
+    await authMod.setPersistence(auth, authMod.browserSessionPersistence);
+  } catch (e) {
+    console.warn('Session persistence tidak didukung, gunakan default:', e.message);
+  }
+
   try {
     db = fsMod.initializeFirestore(app, {
       localCache: fsMod.persistentLocalCache({ tabManager: fsMod.persistentMultipleTabManager() }),
@@ -117,7 +127,13 @@ function pasangForm() {
     }
   });
   $('#btnKeluarKaryawan').addEventListener('click', () => {
-    if (confirm('Keluar dari aplikasi?')) authMod.signOut(auth);
+    if (confirm('Keluar dari aplikasi?')) {
+      authMod.signOut(auth).catch(console.error);
+      // Clear cache supaya session berikutnya fresh
+      if (db && typeof db.clearPersistence === 'function') {
+        db.clearPersistence().catch(console.error);
+      }
+    }
   });
   $('#segLapor').addEventListener('click', (e) => {
     const b = e.target.closest('.seg');
