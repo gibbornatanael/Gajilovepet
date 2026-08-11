@@ -57,6 +57,8 @@
     <div class="segmented" id="segLapor" role="tablist">
       <button class="seg is-active" data-seg="lapor" role="tab">Lapor</button>
       <button class="seg" data-seg="capaian" role="tab">Capaian</button>
+      <button class="seg" data-seg="slip" role="tab">Slip Gaji</button>
+      <button class="seg" data-seg="chat" role="tab">Chat<span class="seg-badge" id="segBadgeChat" hidden></span></button>
     </div>
 
     <!-- ---------------- LAPOR ---------------- -->
@@ -87,6 +89,46 @@
         <div id="riwayatList" class="list"></div>
       </div>
     </section>
+
+    <!-- ---------------- SLIP GAJI ---------------- -->
+    <section class="segpane" id="pane-slip">
+      <!-- Daftar bulan yang slipnya sudah disetujui pemilik -->
+      <div id="slipDaftar" class="slip-daftar"></div>
+
+      <!-- Satu slip terbuka: gambarnya + tombol unduh & minta revisi -->
+      <div id="slipBuka" hidden>
+        <button type="button" class="slip-kembali" id="slipKembali">‹ Semua slip</button>
+        <div id="slipIsi"></div>
+
+        <div class="slip-aksi">
+          <button type="button" class="btn btn-primary" id="btnUnduhSlipPng">Unduh PNG</button>
+          <button type="button" class="btn" id="btnMintaRevisi">Minta revisi</button>
+        </div>
+
+        <form class="revisi-form" id="revisiForm" hidden>
+          <label class="field"><span class="f-label">Apa yang menurutmu kurang tepat?</span>
+            <textarea id="revisiAlasan" rows="3" required
+              placeholder="Contoh: Lembur saya bulan ini 4x, di slip tertulis 2x."></textarea>
+          </label>
+          <p class="muted" style="font-size:.78rem">
+            Pesanmu masuk ke Chat Manager. Slip ini tetap bisa kamu unduh selama menunggu jawaban.
+          </p>
+          <div class="slip-aksi">
+            <button type="submit" class="btn btn-primary" id="btnKirimRevisi">Kirim</button>
+            <button type="button" class="btn" id="btnBatalRevisi">Batal</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ---------------- CHAT MANAGER ---------------- -->
+    <section class="segpane" id="pane-chat">
+      <div class="chat-pesan" id="chatPesan"></div>
+      <form class="chat-tulis" id="chatForm">
+        <textarea id="chatInput" rows="1" placeholder="Tulis pesan…" autocomplete="off"></textarea>
+        <button type="submit" class="chat-kirim" aria-label="Kirim">➤</button>
+      </form>
+    </section>
   </main>
 </div>
 
@@ -95,6 +137,7 @@
 
 <script src="js/firebase-config.js"></script>
 <script src="js/data.js"></script>
+<script src="js/slip-render.js"></script>
 <script src="js/ayat.js"></script>
 <script type="module" src="js/lapor.js"></script>
 <script>

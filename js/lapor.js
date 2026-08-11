@@ -127,6 +127,8 @@ async function onAuthBerubah(user) {
     renderLaporGrid();
     isiPeriodeKaryawan();
     await muatCapaian();
+    dengarkanSlip();               // slip yang sudah disetujui pemilik
+    dengarkanChat();               // percakapan dengan manager
     bersihkanFotoLama(user.uid);   // tidak ditunggu — jalan di latar belakang
   } catch (e) {
     console.error(e);
@@ -165,12 +167,15 @@ function pasangForm() {
     if (!b) return;
     modeLapor = b.dataset.seg;
     $$('#segLapor .seg').forEach((s) => s.classList.toggle('is-active', s === b));
-    $('#pane-lapor').classList.toggle('is-active', modeLapor === 'lapor');
-    $('#pane-capaian').classList.toggle('is-active', modeLapor === 'capaian');
+    ['lapor', 'capaian', 'slip', 'chat'].forEach((n) =>
+      $('#pane-' + n).classList.toggle('is-active', modeLapor === n));
     if (modeLapor === 'capaian') muatCapaian();
+    if (modeLapor === 'chat') { gulirChatKeBawah(); tandaiChatTerbaca(); }
   });
   $('#periodeKaryawan').addEventListener('change', muatCapaian);
   $('#fileFoto').addEventListener('change', onFotoDipilih);
+  pasangSlip();
+  pasangChat();
 }
 function pesanGalat(err) {
   const kode = (err && err.code) || '';
@@ -359,6 +364,334 @@ async function muatCapaian() {
 function formatTanggal(iso) {
   const [y, m, d] = iso.split('-').map(Number);
   return `${d} ${NAMA_BULAN[m - 1].slice(0, 3)}`;
+}
+
+/* =========================================================================
+   SLIP GAJI
+   -------------------------------------------------------------------------
+   Karyawan tidak pernah membaca data gaji mentah — pemilik "menerbitkan"
+   snapshot slip miliknya ke klinik/lovepet/slip/{empId}_{periode} saat ia
+   menyetujuinya (lihat js/slip-terbit.js). Yang tampil di sini hanyalah slip
+   berstatus 'disetujui'. Kalau pemilik menarik otorisasinya (mis. karena ada
+   salah hitung), slipnya langsung hilang dari daftar sampai disetujui lagi.
+
+   Hanya 3 bulan terakhir yang ditampilkan — cukup untuk keperluan
+   administrasi tanpa menumpuk di layar.
+   ========================================================================= */
+const SIMPAN_BULAN = 3;
+
+let slipSemua = [];        // slip disetujui, terbaru di atas
+let slipTerbuka = null;
+let lepasSlip = null;
+
+/* Periode terlama yang masih ditampilkan, mis. "2026-06" kalau sekarang Agustus. */
+function batasPeriodeSlip() {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - (SIMPAN_BULAN - 1));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/* Kueri hanya disaring pada authUid (satu syarat) supaya tidak memerlukan
+   index gabungan di Firestore; sisanya disaring & diurutkan di sini —
+   jumlah slip milik satu orang hanya belasan, jadi ini murah. */
+function dengarkanSlip() {
+  if (lepasSlip) lepasSlip();
+  const kueri = fsMod.query(
+    fsMod.collection(db, 'klinik', KLINIK_ID, 'slip'),
+    fsMod.where('authUid', '==', profil.authUid),
+  );
+  lepasSlip = fsMod.onSnapshot(kueri, (snap) => {
+    const batas = batasPeriodeSlip();
+    slipSemua = snap.docs
+      .map((d) => Object.assign({ id: d.id }, d.data()))
+      .filter((s) => s.status === 'disetujui' && String(s.periode) >= batas)
+      .sort((a, b) => String(b.periode).localeCompare(String(a.periode)));
+
+    // Slip yang sedang dibuka bisa saja baru ditarik otorisasinya —
+    // kalau begitu, tutup dan kembalikan ke daftar.
+    if (slipTerbuka) {
+      const masih = slipSemua.find((s) => s.id === slipTerbuka.id);
+      if (!masih) { slipTerbuka = null; tampilkanDaftarSlip(); toast('Slip ini sedang diperbaiki manager'); }
+      else { slipTerbuka = masih; renderSlipTerbuka(); }
+    }
+    renderDaftarSlip();
+  }, (e) => {
+    console.warn('Slip:', e);
+    $('#slipDaftar').innerHTML = '<div class="empty">Gagal memuat slip gaji. Periksa koneksi.</div>';
+  });
+}
+
+function renderDaftarSlip() {
+  const kotak = $('#slipDaftar');
+  if (!slipSemua.length) {
+    kotak.innerHTML = '<div class="empty">Belum ada slip gaji yang bisa dibuka.<br>' +
+      'Slip muncul di sini setelah manager menyetujuinya.</div>';
+    return;
+  }
+  kotak.innerHTML = slipSemua.map((s) => {
+    const d = s.data || {};
+    return `<button type="button" class="slip-baris" data-slip="${esc(s.id)}">
+      <span class="slip-baris-ikon">📄</span>
+      <span class="slip-baris-isi">
+        <b>${esc(d.periodeLabel || s.periode)}</b>
+        <small>Disetujui ${esc(s.disetujuiLabel || '—')}${s.versi > 1 ? ` · revisi ke-${s.versi}` : ''}${
+          s.revisiDiminta ? ' · <span class="slip-tinjau">sedang ditinjau</span>' : ''}</small>
+      </span>
+      <span class="slip-baris-nilai">${rp(d.total || 0)}</span>
+    </button>`;
+  }).join('');
+
+  $$('#slipDaftar [data-slip]').forEach((b) => b.addEventListener('click', () => {
+    slipTerbuka = slipSemua.find((s) => s.id === b.dataset.slip) || null;
+    if (slipTerbuka) { renderSlipTerbuka(); tampilkanSlipTerbuka(); }
+  }));
+}
+
+function tampilkanSlipTerbuka() {
+  $('#slipDaftar').hidden = true;
+  $('#slipBuka').hidden = false;
+  $('#revisiForm').hidden = true;
+  window.scrollTo({ top: 0 });
+}
+function tampilkanDaftarSlip() {
+  $('#slipBuka').hidden = true;
+  $('#slipDaftar').hidden = false;
+}
+
+function renderSlipTerbuka() {
+  const s = slipTerbuka;
+  if (!s) return;
+  $('#slipIsi').innerHTML = window.SlipRender.gambar(s.data,
+    { cap: s.versi > 1 ? `Revisi ke-${s.versi}` : '' });
+  $('#btnMintaRevisi').textContent = s.revisiDiminta ? 'Kirim keterangan lagi' : 'Minta revisi';
+}
+
+function pasangSlip() {
+  $('#slipKembali').addEventListener('click', () => { slipTerbuka = null; tampilkanDaftarSlip(); });
+
+  /* Unduh sebagai PNG. html2canvas dimuat saat dipakai saja (lazy import),
+     sama seperti di aplikasi pemilik, supaya halaman ini tetap ringan. */
+  $('#btnUnduhSlipPng').addEventListener('click', async () => {
+    if (!slipTerbuka) return;
+    const tombol = $('#btnUnduhSlipPng');
+    tombol.disabled = true; tombol.textContent = 'Menyiapkan…';
+    try {
+      const { default: html2canvas } = await import('https://esm.sh/html2canvas@1.4.1');
+      const node = $('#slipIsi .slip');
+      const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `slip-${String(profil.nama).replace(/\s+/g, '-')}-${slipTerbuka.periode}.png`;
+      a.click();
+      toast('Slip tersimpan sebagai gambar');
+    } catch (e) {
+      console.error(e);
+      toast('Gagal membuat gambar: ' + (e.message || e));
+    } finally {
+      tombol.disabled = false; tombol.textContent = 'Unduh PNG';
+    }
+  });
+
+  $('#btnMintaRevisi').addEventListener('click', () => {
+    $('#revisiForm').hidden = false;
+    $('#revisiAlasan').focus();
+  });
+  $('#btnBatalRevisi').addEventListener('click', () => { $('#revisiForm').hidden = true; });
+
+  $('#revisiForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alasan = $('#revisiAlasan').value.trim();
+    if (!alasan || !slipTerbuka) return;
+    const tombol = $('#btnKirimRevisi');
+    tombol.disabled = true; tombol.textContent = 'Mengirim…';
+    try {
+      await kirimPermintaanRevisi(slipTerbuka, alasan);
+      $('#revisiAlasan').value = '';
+      $('#revisiForm').hidden = true;
+      toast('Terkirim ke manager — lihat balasannya di tab Chat');
+    } catch (err) {
+      console.error(err);
+      toast('Gagal mengirim: ' + (err.message || err));
+    } finally {
+      tombol.disabled = false; tombol.textContent = 'Kirim';
+    }
+  });
+}
+
+/* Permintaan revisi sengaja dikirim sebagai PESAN CHAT biasa (bertanda
+   slipnya), bukan sistem tersendiri: dengan begitu tanya-jawabnya berlanjut
+   di satu tempat. Penanda di dokumen slip hanya dipakai supaya pemilik
+   melihat lencana "sedang ditinjau" di tombol otorisasinya. */
+async function kirimPermintaanRevisi(slip, alasan) {
+  await fsMod.updateDoc(fsMod.doc(db, 'klinik', KLINIK_ID, 'slip', slip.id), {
+    revisiDiminta: true, revisiAlasan: alasan.slice(0, 500), revisiMs: Date.now(),
+  });
+  await kirimPesanChat(alasan, {
+    tipe: 'revisi',
+    periode: slip.periode,
+    periodeLabel: (slip.data && slip.data.periodeLabel) || slip.periode,
+  });
+}
+
+/* =========================================================================
+   CHAT MANAGER
+   -------------------------------------------------------------------------
+   Satu ruang per karyawan di klinik/lovepet/chat/{empId}; isinya di
+   subkoleksi `pesan`. Karyawan hanya boleh menambah pesan — tidak mengubah
+   atau menghapus (dijaga di firestore.rules), supaya percakapan soal gaji
+   tidak bisa disunting setelah terkirim.
+   ========================================================================= */
+const BATAS_PESAN = 300;
+
+let pesanChat = [];
+let lepasChat = null, lepasRuangChat = null;
+let belumDibaca = 0;
+
+const ruangChatRef = () => fsMod.doc(db, 'klinik', KLINIK_ID, 'chat', profil.empId);
+
+function dengarkanChat() {
+  if (lepasChat) lepasChat();
+  const kueri = fsMod.query(
+    fsMod.collection(ruangChatRef(), 'pesan'),
+    fsMod.orderBy('ms', 'desc'), fsMod.limit(BATAS_PESAN),
+  );
+  lepasChat = fsMod.onSnapshot(kueri, (snap) => {
+    pesanChat = snap.docs.map((d) => Object.assign({ id: d.id }, d.data())).reverse();
+    renderChat();
+    if (modeLapor === 'chat') { gulirChatKeBawah(); tandaiChatTerbaca(); }
+  }, (e) => {
+    console.warn('Chat:', e);
+    $('#chatPesan').innerHTML = '<div class="chat-sibuk">Gagal memuat percakapan.</div>';
+  });
+
+  if (lepasRuangChat) lepasRuangChat();
+  lepasRuangChat = fsMod.onSnapshot(ruangChatRef(), (snap) => {
+    belumDibaca = snap.exists() ? (Number(snap.data().belumKaryawan) || 0) : 0;
+    const b = $('#segBadgeChat');
+    b.textContent = belumDibaca > 99 ? '99+' : String(belumDibaca);
+    b.hidden = belumDibaca === 0;
+    if (modeLapor === 'chat') tandaiChatTerbaca();
+  }, () => {});
+}
+
+function renderChat() {
+  const kotak = $('#chatPesan');
+  if (!pesanChat.length) {
+    kotak.innerHTML = '<div class="chat-sibuk">Belum ada pesan.<br>' +
+      'Ada yang mau ditanyakan ke manager? Tulis di bawah.</div>';
+    return;
+  }
+  let hariTerakhir = '';
+  kotak.innerHTML = pesanChat.map((p) => {
+    const hari = tanggalHariChat(p.ms);
+    const pemisah = hari !== hariTerakhir ? `<div class="chat-hari"><span>${esc(hari)}</span></div>` : '';
+    hariTerakhir = hari;
+    // Kabar otomatis saat slip disetujui / ditarik — ditaruh di tengah tanpa
+    // gelembung, seperti pesan sistem di WhatsApp.
+    if (p.tipe === 'sistem') {
+      return `${pemisah}<div class="chat-sistem">${esc(p.teks)} <small>${jamChat(p.ms)}</small></div>`;
+    }
+    const milikku = p.dari === 'karyawan';
+    const kepala = p.tipe === 'revisi'
+      ? `<span class="bubble-tag">📄 Minta revisi — ${esc(p.periodeLabel || p.periode || '')}</span>` : '';
+    return `${pemisah}<div class="bubble-row ${milikku ? 'kanan' : 'kiri'}">
+      <div class="bubble${p.tipe === 'revisi' ? ' is-revisi' : ''}">
+        ${kepala}
+        <span class="bubble-teks">${esc(p.teks)}</span>
+        <span class="bubble-jam">${jamChat(p.ms)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function gulirChatKeBawah() {
+  const k = $('#chatPesan');
+  if (k) k.scrollTop = k.scrollHeight;
+}
+
+async function tandaiChatTerbaca() {
+  if (!belumDibaca) return;
+  try { await fsMod.setDoc(ruangChatRef(), { belumKaryawan: 0 }, { merge: true }); }
+  catch (e) { console.warn('Tandai terbaca:', e); }
+}
+
+function pasangChat() {
+  $('#chatForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = $('#chatInput');
+    const teks = input.value.trim();
+    if (!teks) return;
+    input.value = ''; aturTinggiChat();
+    try { await kirimPesanChat(teks); }
+    catch (err) {
+      console.error(err);
+      toast('Gagal mengirim: ' + (err.message || err));
+      input.value = teks;
+    }
+  });
+  $('#chatInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#chatForm').requestSubmit(); }
+  });
+  $('#chatInput').addEventListener('input', aturTinggiChat);
+}
+
+function aturTinggiChat() {
+  const t = $('#chatInput');
+  t.style.height = 'auto';
+  t.style.height = Math.min(120, t.scrollHeight) + 'px';
+}
+
+async function kirimPesanChat(teks, tambahan) {
+  const now = Date.now();
+  const ref = ruangChatRef();
+
+  await fsMod.addDoc(fsMod.collection(ref, 'pesan'), Object.assign({
+    dari: 'karyawan', teks, ms: now,
+    empId: profil.empId, authUid: profil.authUid, tipe: 'teks',
+  }, tambahan || {}));
+
+  await fsMod.setDoc(ref, {
+    empId: profil.empId, authUid: profil.authUid, nama: profil.nama,
+    terakhirTeks: teks.slice(0, 120), terakhirMs: now, terakhirDari: 'karyawan',
+    belumKaryawan: 0,
+    belumPemilik: fsMod.increment(1),
+  }, { merge: true });
+
+  beriTahuPemilik(teks, tambahan);   // tidak ditunggu
+}
+
+/* Lencana di aplikasi selalu jalan, tapi HP pemilik hanya berbunyi kalau
+   pesannya diteruskan ke bot Telegram yang sudah dipakai untuk nota.
+   Kalau endpoint-nya belum dipasang, kegagalannya diabaikan diam-diam —
+   pesannya sendiri sudah aman tersimpan di Firestore. */
+async function beriTahuPemilik(teks, tambahan) {
+  try {
+    const idToken = await auth.currentUser.getIdToken();
+    await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idToken,
+        nama: profil.nama,
+        teks,
+        tipe: (tambahan && tambahan.tipe) || 'teks',
+        periodeLabel: (tambahan && tambahan.periodeLabel) || '',
+      }),
+    });
+  } catch (e) { console.warn('Notifikasi Telegram dilewati:', e); }
+}
+
+function jamChat(ms) {
+  const d = new Date(Number(ms) || 0);
+  return `${String(d.getHours()).padStart(2, '0')}.${String(d.getMinutes()).padStart(2, '0')}`;
+}
+function tanggalHariChat(ms) {
+  const d = new Date(Number(ms) || 0);
+  const sama = (a, b) => a.toDateString() === b.toDateString();
+  if (sama(d, new Date())) return 'Hari ini';
+  if (sama(d, new Date(Date.now() - 86400000))) return 'Kemarin';
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 /* ----------------------- Bersihkan foto lama (>90 hari) ----------------------- */

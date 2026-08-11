@@ -41,6 +41,11 @@
       <span>Nota</span>
       <span class="tab-badge" hidden></span>
     </button>
+    <button class="tabitem" data-view="chat">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4-3.8 7.2-8.5 7.2-1 0-2-.15-2.9-.42L4 20.5l1.4-3.8C4.1 15.4 3.5 13.8 3.5 12c0-4 3.8-7.2 8.5-7.2s8.5 3.2 8.5 7.2z"/></svg>
+      <span>Chat</span>
+      <span class="tab-badge" hidden></span>
+    </button>
     <button class="tabitem" data-view="tahunan">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
       <span>Rekap</span>
@@ -165,7 +170,7 @@
       <section class="view" id="view-slip">
         <div class="page-head no-print">
           <h1>Slip Gaji</h1>
-          <p class="muted">Pilih karyawan, lalu cetak atau simpan sebagai PDF.</p>
+          <p class="muted">Pilih karyawan, lalu setujui agar ia bisa mengunduhnya sendiri — atau cetak di sini.</p>
         </div>
 
         <div class="toolbar no-print">
@@ -174,6 +179,10 @@
             <select id="slipKaryawan"></select>
           </label>
         </div>
+
+        <!-- Otorisasi: menentukan apakah karyawan boleh membuka slip ini -->
+        <div class="otorisasi no-print" id="slipOtorisasi" hidden></div>
+
         <div class="toolbar no-print">
           <button class="btn btn-primary" id="btnCetakSlip">Cetak / PDF</button>
           <button class="btn" id="btnCetakSemua">Cetak semua</button>
@@ -182,6 +191,36 @@
         </div>
 
         <div id="slipArea"></div>
+      </section>
+
+      <!-- ====================== CHAT KARYAWAN ====================== -->
+      <section class="view" id="view-chat">
+        <div class="page-head chat-hanya-daftar">
+          <h1>Chat Karyawan</h1>
+          <p class="muted">Percakapan pribadi dengan tiap karyawan — pertanyaan, permintaan revisi slip, pengumuman.</p>
+        </div>
+
+        <div id="chatKosong" class="chat-hanya-daftar"></div>
+        <div id="chatDaftar" class="chat-daftar chat-hanya-daftar"></div>
+
+        <!-- Ruang percakapan: menggantikan daftar saat sebuah nama dibuka -->
+        <div class="chat-ruang">
+          <header class="chat-kepala">
+            <button type="button" class="chat-kembali" id="chatKembali" aria-label="Kembali ke daftar">‹</button>
+            <span class="chat-avatar" id="chatAvatarBesar"></span>
+            <span class="chat-kepala-teks">
+              <strong id="chatJudulNama">—</strong>
+              <small id="chatJudulRole"></small>
+            </span>
+          </header>
+
+          <div class="chat-pesan" id="chatPesan"></div>
+
+          <form class="chat-tulis" id="chatForm">
+            <textarea id="chatInput" rows="1" placeholder="Tulis pesan…" autocomplete="off"></textarea>
+            <button type="submit" class="chat-kirim" aria-label="Kirim">➤</button>
+          </form>
+        </div>
       </section>
 
       <!-- ====================== NOTA / PENGELUARAN ====================== -->
@@ -353,10 +392,13 @@
 
 <script src="js/firebase-config.js"></script>
 <script src="js/data.js"></script>
+<script src="js/slip-render.js"></script>
 <script src="js/app.js"></script>
 <script type="module" src="js/cloud.js"></script>
 <script type="module" src="js/provisioning.js"></script>
 <script type="module" src="js/nota.js"></script>
+<script type="module" src="js/slip-terbit.js"></script>
+<script type="module" src="js/chat.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

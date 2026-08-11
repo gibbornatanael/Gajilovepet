@@ -106,6 +106,62 @@ dihapus datanya, hanya fotonya) setelah 90 hari, dijalankan diam-diam setiap
 kali aplikasi pemilik atau karyawan dibuka — bukan jadwal pasti tengah malam,
 tapi cukup untuk menjaga ukuran database tetap kecil.
 
+## Karyawan mengambil slip gajinya sendiri
+
+Karyawan tidak lagi perlu diminta slipnya satu per satu — mereka membukanya
+sendiri di tab **Slip Gaji** pada `lapor.html`, tapi **hanya setelah Anda
+menyetujuinya**.
+
+**Alur untuk Anda:**
+
+1. Buka tab **Slip Gaji**, pilih karyawannya, periksa angkanya.
+2. Tekan **Setujui & kirim**. Saat itulah angka slip orang itu disalin ke
+   dokumen tersendiri miliknya, dan ia langsung bisa membukanya.
+3. Kalau ternyata ada salah hitung, tekan **Tarik otorisasi** → slipnya
+   hilang dari layar karyawan → perbaiki angkanya di tab Input → **Setujui &
+   kirim** lagi. Versinya naik dan slip yang baru diberi cap "Revisi ke-2".
+
+**Alur untuk karyawan:** tab **Slip Gaji** → daftar bulan yang sudah
+disetujui (**3 bulan terakhir**) → ketuk salah satu → **Unduh PNG**. Kalau
+jumlahnya dirasa kurang tepat, ada tombol **Minta revisi**: ia mengetik
+alasannya, dan itu masuk ke chat Anda sebagai pesan bertanda slip bulan
+tersebut. **Slipnya tetap bisa diunduh** selama menunggu jawaban — supaya
+tidak ada yang terkunci hanya karena bertanya.
+
+Setiap kali Anda menyetujui atau menarik otorisasi, sebuah catatan otomatis
+muncul di ruang chat karyawan itu ("Slip Juli 2026 sudah disetujui…"),
+sehingga slip yang tiba-tiba muncul atau menghilang selalu ada
+penjelasannya.
+
+**Kenapa disalin, bukan dibaca langsung:** seluruh data gaji semua orang ada
+di satu dokumen milik Anda. Kalau karyawan boleh membacanya, ia otomatis
+bisa melihat gaji rekan-rekannya. Karena itu yang disalin hanya angka jadi
+milik orang itu saja — dan salinan itu **tidak ikut berubah** kalau Anda
+mengedit angka di aplikasi. Slip yang sudah disetujui adalah bukti; agar
+berubah, ia harus ditarik dan disetujui ulang.
+
+## Chat dengan karyawan — menu **Chat**
+
+Tanya-jawab, permintaan revisi, dan pengumuman kecil berjalan di satu tempat:
+percakapan pribadi satu lawan satu, tampilan gelembung seperti WhatsApp.
+
+* **Anda** — menu **Chat** di aplikasi utama: daftar semua karyawan yang
+  punya akun login, terbaru di atas, dengan angka merah untuk pesan yang
+  belum dibaca (juga muncul di ikon tabnya).
+* **Karyawan** — tab **Chat** di `lapor.html`, hanya berisi percakapan
+  dengan Anda. Ia tidak bisa melihat atau menghubungi karyawan lain.
+
+Pesan tidak bisa disunting atau dihapus oleh karyawan (dijaga di
+`firestore.rules`) — karena percakapan ini menyangkut uang, apa yang sudah
+terkirim harus tetap bisa dibaca ulang apa adanya oleh kedua pihak.
+
+**Notifikasi.** Angka merah di dalam aplikasi selalu jalan. Supaya HP Anda
+ikut **berbunyi** walau aplikasi tertutup, pesan karyawan juga diteruskan ke
+bot Telegram yang sudah dipakai untuk nota — tidak ada pengaturan baru,
+hanya perlu bot Telegram-nya sudah aktif (PANDUAN-DEPLOY.md bagian E3).
+Kalau belum, satu-satunya yang hilang adalah bunyinya; pesannya tetap aman
+tersimpan.
+
 ## Pencatatan pengeluaran — tab **Nota**
 
 Foto nota difoto/diunggah, lalu dibaca AI (Google Gemini) menjadi baris
@@ -199,11 +255,15 @@ js/data.js                   komponen bonus, tarif, rumus, data Jan–Juli 2026
 js/app.js                    logika aplikasi pemilik: input, slip, rekap
 js/cloud.js                  sinkronisasi Firebase aplikasi pemilik (opsional)
 js/provisioning.js           pemilik membuat akun login karyawan
-js/lapor.js                  logika aplikasi karyawan
+js/lapor.js                  logika aplikasi karyawan: lapor, capaian, slip, chat
 js/nota.js                   pencatatan pengeluaran: unggah nota, arsip ZIP, cetak
+js/slip-render.js            bentuk slip gaji — dipakai bersama kedua aplikasi
+js/slip-terbit.js            pemilik menyetujui / menarik otorisasi slip
+js/chat.js                   chat karyawan di sisi pemilik
 functions/_lib/gemini.js     pembacaan foto nota oleh AI (jalan di server Cloudflare)
 functions/api/nota.js        endpoint untuk tombol "Unggah nota"
 functions/api/telegram.js    webhook bot Telegram
+functions/api/notify.js      meneruskan pesan karyawan ke bot Telegram pemilik
 js/firebase-config.js        ← isi ini untuk mengaktifkan sinkronisasi & lapor.html
 firestore.rules              aturan keamanan database — wajib dipasang
 manifest.webmanifest         agar index.html bisa dipasang di Home Screen

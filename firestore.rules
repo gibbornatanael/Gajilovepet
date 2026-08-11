@@ -62,6 +62,57 @@ service cloud.firestore {
       allow delete: if isPemilik();
     }
 
+    // Slip gaji yang sudah diterbitkan ke karyawan.
+    // ID dokumen: {empId}_{periode} — satu slip per karyawan per bulan.
+    // Isinya SNAPSHOT angka jadi (lihat js/slip-terbit.js): karyawan hanya
+    // pernah melihat slipnya sendiri, tidak pernah menyentuh dokumen
+    // /pengguna/{uid} tempat gaji semua orang berada.
+    match /klinik/{klinikId}/slip/{slipId} {
+      allow read: if isPemilik() ||
+        (request.auth != null && resource.data.authUid == request.auth.uid);
+
+      // Hanya pemilik yang boleh menerbitkan, mengubah angka, menarik
+      // otorisasi, atau menghapus.
+      allow create, delete: if isPemilik();
+
+      // Karyawan boleh MENANDAI "minta revisi" pada slipnya sendiri yang
+      // sudah disetujui — dan tidak lebih dari itu. Daftar affectedKeys
+      // di bawah memastikan angka gaji, status, maupun versi tidak bisa
+      // ia sentuh sedikit pun.
+      allow update: if isPemilik() ||
+        (request.auth != null &&
+         resource.data.authUid == request.auth.uid &&
+         resource.data.status == 'disetujui' &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['revisiDiminta', 'revisiAlasan', 'revisiMs']) &&
+         request.resource.data.revisiDiminta == true);
+    }
+
+    // Ruang percakapan pemilik ⇄ karyawan. Satu ruang per karyawan, dengan
+    // empId sebagai id dokumen — jadi izinnya bisa diperiksa lewat jalur
+    // (bukan lewat isi dokumen), yang membuatnya tetap benar walau ruangnya
+    // belum pernah dibuat dan tetap bekerja untuk kueri daftar pesan.
+    match /klinik/{klinikId}/chat/{empId} {
+      allow read, write: if isPemilik() ||
+        (request.auth != null && authUidKaryawan(klinikId, empId) == request.auth.uid);
+
+      // Isi percakapan. Pesan bersifat permanen bagi karyawan: ia boleh
+      // menulis pesan baru, tapi tidak boleh mengubah atau menghapus apa
+      // pun — supaya rekaman percakapan tentang gaji tidak bisa disunting
+      // setelah terkirim.
+      match /pesan/{pesanId} {
+        allow read: if isPemilik() ||
+          (request.auth != null && authUidKaryawan(klinikId, empId) == request.auth.uid);
+
+        allow create: if isPemilik() ||
+          (request.auth != null &&
+           authUidKaryawan(klinikId, empId) == request.auth.uid &&
+           request.resource.data.dari == 'karyawan');
+
+        allow update, delete: if isPemilik();
+      }
+    }
+
     // Catatan pengeluaran (foto nota yang dibaca AI).
     // Hanya pemilik — karyawan tidak pernah menyentuh koleksi ini.
     // Bot Telegram menulis lewat REST API memakai akun pemilik yang sama,

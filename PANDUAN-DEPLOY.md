@@ -149,6 +149,31 @@ ini.
 > **Create**. Tunggu ±1 menit, lalu coba lagi. Setelah itu tidak akan muncul
 > lagi.
 
+### B8. Slip gaji & chat karyawan
+
+Ikut aktif otomatis begitu B1–B7 selesai — **tidak ada setup tambahan**,
+memakai Firestore yang sama. Yang perlu diperhatikan hanya dua hal:
+
+1. **Aturan keamanan harus versi terbaru.** Kalau Anda memasang
+   `firestore.rules` sebelum Agustus 2026, pasang ulang isinya (langkah
+   **B4**) — di dalamnya ada aturan baru untuk koleksi `slip` dan `chat`.
+   Tanpa itu, karyawan akan melihat "Gagal memuat slip gaji".
+2. **Karyawan harus punya akun login** (langkah B7). Tombol **Setujui &
+   kirim** di tab Slip Gaji akan menolak kalau karyawannya belum punya akun,
+   dan mengatakan begitu.
+
+Cara memakainya sehari-hari ada di README bagian *"Karyawan mengambil slip
+gajinya sendiri"*.
+
+**Supaya HP Anda berbunyi saat ada pesan masuk:** angka merah di dalam
+aplikasi selalu jalan tanpa setup apa pun. Untuk bunyi notifikasi sungguhan,
+cukup pastikan **bot Telegram sudah aktif** (bagian **E3** di bawah) —
+pesan karyawan otomatis diteruskan ke grup Telegram yang sama lewat
+`/api/notify`, memakai secret yang sudah ada (`TELEGRAM_BOT_TOKEN`,
+`TELEGRAM_CHAT_ID`, `FIREBASE_API_KEY`). Tidak ada secret baru yang perlu
+dipasang. Kalau bot-nya belum ada, yang hilang hanya bunyinya — pesannya
+tetap tersimpan dan tetap muncul di aplikasi.
+
 ---
 
 ## C. Cloudflare
@@ -343,15 +368,19 @@ Simpan ZIP-nya di iCloud/Drive supaya aman.
 
 ## Rencana berikutnya (karyawan ikut memakai)
 
-**Sudah berjalan:** karyawan bisa login di `lapor.html` dan melaporkan
-performa sendiri (Lembur, Rawat Inap, Styling, Operasi) dengan foto bukti —
-lihat bagian **B7** di atas dan bagian "Karyawan melapor sendiri" di README.
+**Sudah berjalan:** karyawan bisa login di `lapor.html` untuk melaporkan
+performa sendiri (Lembur, Rawat Inap, Styling, Operasi) dengan foto bukti,
+**mengambil slip gajinya sendiri**, dan **chat dengan Anda** — lihat bagian
+**B7** dan **B8** di atas serta README.
 
 Struktur yang dipakai:
 
 ```
 klinik/lovepet/karyawan/{empId}                      → profil + authUid (dibuat pemilik)
 klinik/lovepet/laporan/{empId}_{tanggal}_{kategori}   → satu laporan performa
+klinik/lovepet/slip/{empId}_{periode}                 → slip yang sudah disetujui (snapshot)
+klinik/lovepet/chat/{empId}                           → ringkasan ruang percakapan
+klinik/lovepet/chat/{empId}/pesan/{id}                → tiap gelembung chat
 ```
 
 **Belum ada, jadi PR berikutnya:** fitur **absen** (jam masuk/pulang).

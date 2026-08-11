@@ -148,7 +148,7 @@ function kunciTahun(y) {
 function totalBulan(key) { return rows(key).reduce((s, r) => s + hitung(r).total, 0); }
 
 /* ============================ NAVIGASI ============================ */
-const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'tahunan', 'kelola'];
+const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'chat', 'tahunan', 'kelola'];
 
 function pindahView(nama) {
   // alias lama supaya tautan #karyawan / #pengaturan tetap jalan
@@ -218,6 +218,7 @@ function render(hanya) {
   if (aktif === 'dashboard') renderDashboard();
   if (aktif === 'input')     renderInput();
   if (aktif === 'slip')      renderSlipView();
+  if (aktif === 'chat' && window.ChatPemilik) window.ChatPemilik.segarkan();
   if (aktif === 'tahunan')   renderTahunan();
   if (aktif === 'kelola')  { pasangSegmen(); renderKaryawan(); renderPengaturan(); }
 }
@@ -620,73 +621,114 @@ function renderSlip() {
   const r = rows(periode).find((x) => x.empId === id);
   $('#slipArea').innerHTML = r ? htmlSlip(r) :
     `<div class="empty">Belum ada data gaji ${labelPeriode(periode)}. Isi dulu di tab “Input Gaji”.</div>`;
+  renderOtorisasi();
 }
 
-function htmlSlip(r) {
+/* Ubah satu baris gaji menjadi SNAPSHOT — angka yang sudah jadi, lepas dari
+   `state`. Inilah yang disimpan ke Firestore saat slip disetujui, sehingga
+   karyawan bisa membuka slipnya sendiri tanpa boleh mengintip data orang
+   lain. Bentuk & artinya dijelaskan di js/slip-render.js. */
+function snapshotSlip(r, key) {
+  key = key || periode;
   const h = hitung(r);
   const e = emp(r.empId) || {};
   const p = state.profil;
-  const dibuat = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-  const baris = (list) => list.filter((x) => x.nilai).map((x) =>
-    `<tr><td>${esc(x.label)}${x.ket ? `<div class="ket">${esc(x.ket)}</div>` : ''}</td><td class="r">${rp(x.nilai)}</td></tr>`
-  ).join('') || '<tr><td colspan="2" style="color:#999">—</td></tr>';
+  const rapi = (list) => list.filter((x) => x.nilai)
+    .map((x) => ({ label: x.label, nilai: x.nilai, ket: x.ket || '' }));
 
-  return `<div class="slip">
-    <div class="slip-head">
-      <div class="slip-logo">🐾</div>
-      <div>
-        <h2>${esc(p.nama)}</h2>
-        <div class="sub">${esc(p.subjudul)}${p.alamat ? ' • ' + esc(p.alamat) : ''}${p.kota ? ', ' + esc(p.kota) : ''}${p.telp ? ' • ' + esc(p.telp) : ''}</div>
-      </div>
-      <div class="slip-title">
-        <div class="t">Slip Gaji</div>
-        <div class="p">${labelPeriode(periode)}</div>
-      </div>
-    </div>
-
-    <div class="slip-meta">
-      <div><span>Nama</span><b>${esc(r.nama)}</b></div>
-      <div><span>Periode</span><b>${labelPeriode(periode)}</b></div>
-      <div><span>Posisi</span><b>${esc(r.role)}</b></div>
-      <div><span>Tanggal</span><b>${dibuat}</b></div>
-      ${e.bank ? `<div><span>Bank</span><b>${esc(e.bank)} ${esc(e.norek || '')}</b></div>` : ''}
-      ${e.mulai ? `<div><span>Bergabung</span><b>${new Date(e.mulai).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</b></div>` : ''}
-    </div>
-
-    <div class="slip-cols">
-      <div>
-        <table>
-          <thead><tr><th>Pendapatan</th><th class="r">Jumlah</th></tr></thead>
-          <tbody>${baris(h.pendapatan)}
-            <tr class="sum"><td>Total Pendapatan</td><td class="r">${rp(h.bruto)}</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div>
-        <table>
-          <thead><tr><th>Potongan</th><th class="r">Jumlah</th></tr></thead>
-          <tbody>${baris(h.potonganList)}
-            <tr class="sum"><td>Total Potongan</td><td class="r">${rp(h.potongan)}</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="slip-total">
-      <div class="lbl">Gaji Diterima</div>
-      <div class="val">${rp(h.total)}</div>
-    </div>
-    <div class="slip-terbilang">Terbilang: ${terbilang(h.total)}</div>
-    ${r.catatan ? `<div class="slip-note">${esc(r.catatan)}</div>` : ''}
-
-    <div class="slip-sign">
-      <div><div>Diterima oleh,</div><div class="line">${esc(r.nama)}</div></div>
-      <div><div>${esc(p.kota || 'Hormat kami')},</div><div class="line">${esc(p.penandatangan)}<br><span style="font-weight:400;font-size:.75rem">${esc(p.jabatanPenandatangan)}</span></div></div>
-    </div>
-
-    <div class="slip-foot">Dokumen ini dicetak dari aplikasi penggajian ${esc(p.nama)} — bersifat rahasia.</div>
-  </div>`;
+  return {
+    periode: key,
+    periodeLabel: labelPeriode(key),
+    nama: r.nama,
+    role: r.role,
+    tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+    klinik: {
+      nama: p.nama || '', subjudul: p.subjudul || '', alamat: p.alamat || '',
+      kota: p.kota || '', telp: p.telp || '',
+      penandatangan: p.penandatangan || '', jabatan: p.jabatanPenandatangan || '',
+    },
+    bank: e.bank || '',
+    norek: e.norek || '',
+    bergabung: e.mulai ? new Date(e.mulai).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) : '',
+    pendapatan: rapi(h.pendapatan),
+    potonganList: rapi(h.potonganList),
+    bruto: h.bruto, potongan: h.potongan, total: h.total,
+    terbilang: terbilang(h.total),
+    catatan: r.catatan || '',
+  };
 }
+
+function htmlSlip(r) { return window.SlipRender.gambar(snapshotSlip(r)); }
+
+/* ---------------- Otorisasi slip (tombol di atas pratinjau) ----------------
+   Logika penerbitannya ada di js/slip-terbit.js — ia sebuah module dan
+   memegang sambungan Firestore. Di sini hanya tombolnya. */
+function renderOtorisasi() {
+  const kotak = $('#slipOtorisasi');
+  if (!kotak) return;
+  const id = $('#slipKaryawan').value;
+  const r = rows(periode).find((x) => x.empId === id);
+  const T = window.SlipTerbit;
+
+  if (!r) { kotak.hidden = true; return; }
+  kotak.hidden = false;
+
+  if (!T || !T.siap()) {
+    kotak.className = 'otorisasi';
+    kotak.innerHTML = '<div class="ot-teks"><b>Belum tersambung ke server.</b>' +
+      '<p>Masuk ke akun dulu supaya slip bisa dikirim ke karyawan.</p></div>';
+    return;
+  }
+  if (!(emp(id) || {}).authUid) {
+    kotak.className = 'otorisasi';
+    kotak.innerHTML = '<div class="ot-teks"><b>Karyawan ini belum punya akun.</b>' +
+      '<p>Buatkan dulu di Kelola → Karyawan supaya ia bisa membuka slipnya sendiri.</p></div>';
+    return;
+  }
+
+  const s = T.status(id, periode);
+  const disetujui = s && s.status === 'disetujui';
+  kotak.className = 'otorisasi' + (disetujui ? ' is-ok' : '');
+  kotak.innerHTML = `
+    <div class="ot-teks">
+      <b>${disetujui ? '✓ Sudah dikirim ke ' + esc(r.nama) : 'Belum dikirim ke karyawan'}</b>
+      <p>${disetujui
+        ? `Disetujui ${esc(s.disetujuiLabel)}${s.versi > 1 ? ` · revisi ke-${s.versi}` : ''}. ` +
+          (s.revisiDiminta ? '<span class="ot-minta">Karyawan meminta revisi — lihat tab Chat.</span>'
+                           : 'Ia sudah bisa membukanya di halaman Performance Bonus.')
+        : 'Setelah disetujui, slip ini langsung muncul di halaman Performance Bonus miliknya.'}</p>
+    </div>
+    ${disetujui
+      ? `<button class="btn btn-danger" data-ot="tarik">Tarik otorisasi</button>
+         <button class="btn" data-ot="setujui">Kirim ulang</button>`
+      : `<button class="btn btn-primary" data-ot="setujui">Setujui &amp; kirim</button>`}`;
+
+  $$('#slipOtorisasi [data-ot]').forEach((b) => b.addEventListener('click', () => aksiOtorisasi(b.dataset.ot, r, b)));
+}
+
+async function aksiOtorisasi(aksi, r, tombol) {
+  const T = window.SlipTerbit;
+  const lama = tombol.textContent;
+  tombol.disabled = true; tombol.textContent = 'Memproses…';
+  try {
+    if (aksi === 'tarik') {
+      if (!confirm(`Tarik otorisasi slip ${r.nama} — ${labelPeriode(periode)}?\n\n` +
+        'Ia tidak bisa mengunduhnya lagi sampai Anda menyetujui ulang.')) return;
+      await T.tarik(r.empId, periode);
+      toast('Otorisasi ditarik — slip disembunyikan dari karyawan');
+    } else {
+      await T.setujui(r.empId, periode, snapshotSlip(r), (emp(r.empId) || {}).authUid);
+      toast(`Slip ${r.nama} dikirim — ia sudah bisa mengunduhnya`);
+    }
+  } catch (e) {
+    console.error(e);
+    toast('Gagal: ' + (e.message || e));
+  } finally {
+    tombol.disabled = false; tombol.textContent = lama;
+    renderOtorisasi();
+  }
+}
+document.addEventListener('slip-terbit-berubah', renderOtorisasi);
 
 let cetakDisiapkan = false;
 function cetak(html) {
