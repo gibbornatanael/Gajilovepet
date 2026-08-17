@@ -149,23 +149,56 @@ function totalBulan(key) { return rows(key).reduce((s, r) => s + hitung(r).total
 
 /* ============================ NAVIGASI ============================ */
 const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'chat', 'tahunan', 'kelola'];
+// Tab yang di HP disembunyikan ke dalam sheet "Lainnya" (lihat #moreSheet di index.html)
+const VIEWS_LAINNYA = ['chat', 'tahunan', 'kelola'];
 
 function pindahView(nama) {
   // alias lama supaya tautan #karyawan / #pengaturan tetap jalan
   if (nama === 'karyawan' || nama === 'pengaturan') { segAktif = nama; nama = 'kelola'; }
   if (!VIEWS.includes(nama)) nama = 'dashboard';
   $$('.tabitem').forEach((t) => t.classList.toggle('is-active', t.dataset.view === nama));
+  const tabMore = $('#tabMore');
+  if (tabMore) tabMore.classList.toggle('is-active', VIEWS_LAINNYA.includes(nama));
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === 'view-' + nama));
   if (location.hash.slice(1) !== nama) history.replaceState(null, '', '#' + nama);
   window.scrollTo({ top: 0 });
+  tutupLainnya();
   render(nama);
 }
 window.addEventListener('hashchange', () => pindahView(location.hash.slice(1)));
 
 $('#tabs').addEventListener('click', (e) => {
   const t = e.target.closest('.tabitem');
+  if (t && t.dataset.view) pindahView(t.dataset.view);
+});
+
+/* Sheet "Lainnya" di HP: tampung Chat/Rekap/Kelola supaya tab bar tak sesak */
+function bukaLainnya() {
+  $('#moreBackdrop').hidden = false;
+  $('#moreSheet').hidden = false;
+  $('#tabMore').setAttribute('aria-expanded', 'true');
+}
+function tutupLainnya() {
+  const backdrop = $('#moreBackdrop'), sheet = $('#moreSheet'), tabMore = $('#tabMore');
+  if (backdrop) backdrop.hidden = true;
+  if (sheet) sheet.hidden = true;
+  if (tabMore) tabMore.setAttribute('aria-expanded', 'false');
+}
+$('#tabMore').addEventListener('click', () => {
+  $('#moreSheet').hidden ? bukaLainnya() : tutupLainnya();
+});
+$('#moreBackdrop').addEventListener('click', tutupLainnya);
+$('#moreSheet').addEventListener('click', (e) => {
+  const t = e.target.closest('.tabitem');
   if (t) pindahView(t.dataset.view);
 });
+// Titik merah di "Lainnya" kalau salah satu tab tersembunyi (mis. Chat) punya lencana aktif
+window.pasangBadgeLainnya = function pasangBadgeLainnya() {
+  const badge = $('#moreBadge');
+  if (!badge) return;
+  const adaLencana = $$('#moreSheet .tab-badge').some((b) => !b.hidden);
+  badge.hidden = !adaLencana;
+};
 
 /* Segmented control di halaman Kelola */
 let segAktif = 'karyawan';
@@ -223,9 +256,45 @@ function render(hanya) {
   if (aktif === 'kelola')  { pasangSegmen(); renderKaryawan(); renderPengaturan(); }
 }
 
+/* ====================== RINGKASAN INTAJO (klinik) ====================== */
+// Cocok dengan tanggalKemarinWita() di functions/api/intajo-sync.js —
+// dokumen ditulis sekali per hari oleh Cron Trigger jam 00:00 WITA.
+function tanggalKemarinWita() {
+  const witaMs = Date.now() + 8 * 60 * 60 * 1000;
+  const d = new Date(witaMs);
+  d.setUTCDate(d.getUTCDate() - 1);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+async function renderIntajo() {
+  const kartu = $('#cardIntajo');
+  if (!window.CLOUD || !kartu) return;
+  const { db, fsMod } = window.CLOUD;
+  const tanggal = tanggalKemarinWita();
+  try {
+    const ref = fsMod.doc(db, 'klinik', KLINIK_ID, 'ringkasanIntajo', tanggal);
+    const snap = await fsMod.getDoc(ref);
+    if (!snap.exists()) { kartu.hidden = true; return; }
+    const d = snap.data();
+    const [y, m, tgl] = tanggal.split('-');
+    $('#intajoTanggal').textContent = `${tgl} ${NAMA_BULAN[Number(m) - 1]} ${y}`;
+    const baris = (label, c) => `
+      <div class="stat"><div class="k">Pendapatan ${label}</div><div class="v">${rp(c.pendapatan)}</div></div>
+      <div class="stat"><div class="k">Pengeluaran ${label}</div><div class="v">${rp(c.pengeluaran)}</div></div>
+      <div class="stat"><div class="k">Keuntungan ${label}</div><div class="v">${rp(c.keuntungan)}</div></div>`;
+    $('#intajoRow').innerHTML =
+      baris('Manado', d.cabang.manado) + baris('Tomohon', d.cabang.tomohon) + baris('Total', d.gabungan);
+    kartu.hidden = false;
+  } catch (e) {
+    console.error('renderIntajo:', e);
+    kartu.hidden = true;
+  }
+}
+
 /* ============================ DASHBOARD ============================ */
 function renderDashboard() {
   const data = rows(periode);
+  renderIntajo();
   $('#ringkasPeriode').textContent = labelPeriode(periode);
 
   const total = data.reduce((s, r) => s + hitung(r).total, 0);

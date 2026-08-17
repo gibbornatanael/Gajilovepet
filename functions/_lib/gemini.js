@@ -12,7 +12,7 @@
 export const KATEGORI = ['Obat & Vaksin', 'Pakan', 'Alat Medis', 'Operasional',
   'Kebersihan', 'Perlengkapan', 'Lain-lain'];
 
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-flash-latest';
 
 const PETUNJUK = `Kamu membaca foto nota/struk belanja sebuah klinik hewan di Indonesia.
 Keluarkan datanya sebagai JSON.

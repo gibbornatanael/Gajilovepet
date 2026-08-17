@@ -395,3 +395,9 @@ miliknya sendiri, pemilik baca/tulis semua), lalu tambah tab ketiga
 ("Absen") di `lapor.html` di samping *Lapor* dan *Capaian*. `js/lapor.js`
 sudah punya semua utilitas yang dibutuhkan (auth karyawan, profil, tanggal
 ISO) — tinggal disambung.
+
+
+
+
+
+

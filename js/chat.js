@@ -77,11 +77,14 @@ function belumDibacaTotal() {
 }
 
 function renderLencana() {
-  const tab = q('.tabitem[data-view="chat"] .tab-badge');
-  if (!tab) return;
+  const tabs = qq('.tabitem[data-view="chat"] .tab-badge');
+  if (!tabs.length) return;
   const n = belumDibacaTotal();
-  tab.textContent = n > 99 ? '99+' : String(n);
-  tab.hidden = n === 0;
+  tabs.forEach((tab) => {
+    tab.textContent = n > 99 ? '99+' : String(n);
+    tab.hidden = n === 0;
+  });
+  if (window.pasangBadgeLainnya) window.pasangBadgeLainnya();
 }
 
 function renderDaftar() {

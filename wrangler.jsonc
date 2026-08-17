@@ -18,5 +18,11 @@
     "directory": "./",
     "binding": "ASSETS",
     "not_found_handling": "404-page"
+  },
+
+  // 16:00 UTC = 00:00 WITA (UTC+8) hari berikutnya — sinkronisasi harian
+  // ringkasan intajo.com (lihat worker.js: scheduled(), functions/api/intajo-sync.js).
+  "triggers": {
+    "crons": ["0 16 * * *"]
   }
 }

@@ -114,6 +114,38 @@ main {
 .tabitem.is-active svg { stroke-width: 2.1; }
 .tabitem:active { opacity: .55; }
 
+/* Tab yang di HP disembunyikan ke dalam sheet "Lainnya", tapi tetap tampil
+   penuh di sidebar desktop (lihat override di media (min-width: 900px)). */
+.tab-desktop-only { display: none; }
+
+/* --- HP: sheet "Lainnya" (bottom sheet) untuk tab yang tak muat di tab bar --- */
+.more-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 59;
+  background: rgba(0,0,0,.32);
+}
+.more-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 10px calc(env(safe-area-inset-bottom) + 14px);
+  background: var(--surface-1);
+  border-top: 1px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  box-shadow: 0 -8px 30px rgba(0,0,0,.12);
+}
+.more-sheet-handle {
+  width: 36px; height: 4px; border-radius: 3px; margin: 4px auto 8px;
+  background: var(--border-strong);
+}
+.more-sheet .tabitem {
+  flex-direction: row; justify-content: flex-start; gap: 12px;
+  padding: 12px 10px; border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+.more-sheet .tabitem svg { width: 22px; height: 22px; }
+.more-sheet .tabitem span { font-size: .92rem; }
+.more-sheet .tabitem.is-active { background: var(--brand-soft); color: var(--brand-ink); }
+.more-sheet[hidden], .more-sheet-backdrop[hidden] { display: none; }
+
 /* --- Desktop: sidebar kiri --- */
 @media (min-width: 900px) {
   :root { --tabbar-h: 0px; }
@@ -147,6 +179,8 @@ main {
   .tabitem.is-active svg { stroke-width: 1.9; }
   .tabbar-foot { display: block; margin-top: auto; padding: 8px; }
   .mobile-only { display: none !important; }
+  .tab-desktop-only { display: flex; }
+  .more-sheet, .more-sheet-backdrop { display: none !important; }
 }
 
 /* ========================= TOPBAR ========================= */

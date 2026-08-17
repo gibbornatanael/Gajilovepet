@@ -41,6 +41,36 @@
       <span>Nota</span>
       <span class="tab-badge" hidden></span>
     </button>
+    <button class="tabitem tab-desktop-only" data-view="chat">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4-3.8 7.2-8.5 7.2-1 0-2-.15-2.9-.42L4 20.5l1.4-3.8C4.1 15.4 3.5 13.8 3.5 12c0-4 3.8-7.2 8.5-7.2s8.5 3.2 8.5 7.2z"/></svg>
+      <span>Chat</span>
+      <span class="tab-badge" hidden></span>
+    </button>
+    <button class="tabitem tab-desktop-only" data-view="tahunan">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
+      <span>Rekap</span>
+    </button>
+    <button class="tabitem tab-desktop-only" data-view="kelola">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
+      <span>Kelola</span>
+    </button>
+
+    <button class="tabitem mobile-only" id="tabMore" aria-haspopup="true" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+      <span>Lainnya</span>
+      <span class="tab-badge" id="moreBadge" hidden></span>
+    </button>
+
+    <div class="tabbar-foot">
+      <span class="cloud-status" id="cloudStatus" hidden></span>
+      <button class="icon-btn" id="themeToggle" title="Ganti tema" aria-label="Ganti tema">◐</button>
+    </div>
+  </nav>
+
+  <!-- ============ SHEET "LAINNYA": tampung tab yang tak muat di HP ============ -->
+  <div class="more-sheet-backdrop no-print" id="moreBackdrop" hidden></div>
+  <div class="more-sheet no-print" id="moreSheet" hidden>
+    <div class="more-sheet-handle"></div>
     <button class="tabitem" data-view="chat">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4-3.8 7.2-8.5 7.2-1 0-2-.15-2.9-.42L4 20.5l1.4-3.8C4.1 15.4 3.5 13.8 3.5 12c0-4 3.8-7.2 8.5-7.2s8.5 3.2 8.5 7.2z"/></svg>
       <span>Chat</span>
@@ -54,12 +84,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
       <span>Kelola</span>
     </button>
-
-    <div class="tabbar-foot">
-      <span class="cloud-status" id="cloudStatus" hidden></span>
-      <button class="icon-btn" id="themeToggle" title="Ganti tema" aria-label="Ganti tema">◐</button>
-    </div>
-  </nav>
+  </div>
 
   <div class="content">
 
@@ -88,6 +113,14 @@
         </div>
 
         <div class="stat-row" id="statRow"></div>
+
+        <div class="card" id="cardIntajo" hidden>
+          <div class="card-head">
+            <h2>Klinik — <span id="intajoTanggal"></span></h2>
+            <p class="muted">Pendapatan, pengeluaran &amp; keuntungan dari intajo.com, per cabang</p>
+          </div>
+          <div class="stat-row" id="intajoRow"></div>
+        </div>
 
         <div class="grid-2">
           <div class="card">

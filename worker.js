@@ -4,7 +4,7 @@
    Situs ini di-deploy sebagai Worker biasa (bukan Cloudflare Pages), jadi
    TIDAK ada routing otomatis berdasarkan struktur folder. Berkas ini yang
    menyambungkan dua hal:
-     • /api/nota, /api/telegram      → dilempar ke functions/api/*.js
+     • /api/nota, /api/telegram, /api/notify → dilempar ke functions/api/*.js
      • semua alamat lain (index.html, css/, js/, …) → dilayani langsung
        dari berkas statis lewat binding "ASSETS" (diatur di wrangler.jsonc)
 
@@ -15,6 +15,8 @@
    ========================================================================= */
 import { onRequestPost as notaHandler } from './functions/api/nota.js';
 import { onRequestPost as telegramHandler } from './functions/api/telegram.js';
+import { onRequestPost as notifyHandler } from './functions/api/notify.js';
+import { onRequestPost as intajoSyncHandler, jalankanSinkronisasi, tanggalKemarinWita } from './functions/api/intajo-sync.js';
 
 export default {
   async fetch(request, env) {
@@ -30,10 +32,30 @@ export default {
         ? telegramHandler({ request, env })
         : new Response('Gunakan POST', { status: 405 });
     }
+    if (url.pathname === '/api/notify') {
+      return request.method === 'POST'
+        ? notifyHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
+    if (url.pathname === '/api/intajo-sync') {
+      return request.method === 'POST'
+        ? intajoSyncHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
 
     // Bukan /api/* → layani sebagai berkas statis (index.html, lapor.html,
     // css/, js/, icons/, sw.js, dst.) persis seperti Cloudflare Pages
     // sebelumnya menyajikan seluruh isi repo.
     return env.ASSETS.fetch(request);
+  },
+
+  // Cron Trigger (lihat wrangler.jsonc) — jalan sendiri tiap 00:00 WITA,
+  // ambil ringkasan intajo.com hari sebelumnya, simpan ke Firestore.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(
+      jalankanSinkronisasi(env, tanggalKemarinWita()).catch((e) => {
+        console.error('cron intajo-sync gagal:', e && e.stack);
+      })
+    );
   },
 };
