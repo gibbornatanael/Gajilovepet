@@ -121,6 +121,12 @@ service cloud.firestore {
       allow read, write: if isPemilik();
     }
 
+    // Ringkasan harian intajo.com (ditulis Worker lewat Cron Trigger).
+    match /klinik/{klinikId}/ringkasanIntajo/{tanggal} {
+      allow read: if isPemilik();
+      allow write: if isPemilik();
+    }
+
     // Semua jalur lain ditolak
     match /{document=**} {
       allow read, write: if false;
