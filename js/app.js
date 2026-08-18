@@ -323,7 +323,101 @@ async function tarikIntajoSekarang(tombol) {
     tombol.disabled = false;
     setTimeout(() => { tombol.textContent = semula; }, 3000);
   }
+  if (!$('#panelRekapIntajo').hidden) renderRekapIntajo($('#rekapIntajoBulan').value);
 }
+
+/* Rekap harian intajo — dimulai dari CUTOFF_REKAP_INTAJO (tanggal fitur ini
+   dipasang), BUKAN dari awal data tersimpan. Dokumen sebelum tanggal itu
+   ditulis dengan bug tanggal-geser & cabang-kembar (lihat commit sebelumnya
+   yang memperbaikinya), jadi sengaja diabaikan supaya rekap tidak
+   menyesatkan — bukan lupa dibersihkan. */
+const CUTOFF_REKAP_INTAJO = '2026-08-18';
+
+async function bulanBerisiDataIntajo() {
+  const { db, fsMod } = window.CLOUD;
+  const kol = fsMod.collection(db, 'klinik', KLINIK_ID, 'ringkasanIntajo');
+  const q = fsMod.query(kol, fsMod.where('tanggal', '>=', CUTOFF_REKAP_INTAJO), fsMod.orderBy('tanggal', 'asc'));
+  const snap = await fsMod.getDocs(q);
+  const bulanSet = new Set();
+  snap.forEach((d) => bulanSet.add(d.id.slice(0, 7)));
+  bulanSet.add(tanggalWita(0).slice(0, 7)); // bulan berjalan selalu ada walau belum ada data
+  return [...bulanSet].sort().reverse();
+}
+
+async function isiDropdownRekapIntajo() {
+  const sel = $('#rekapIntajoBulan');
+  if (sel.dataset.terisi) return;
+  const bulanList = await bulanBerisiDataIntajo();
+  sel.innerHTML = bulanList.map((b) => {
+    const [y, m] = b.split('-');
+    return `<option value="${b}">${NAMA_BULAN[Number(m) - 1]} ${y}</option>`;
+  }).join('');
+  sel.dataset.terisi = '1';
+}
+
+async function renderRekapIntajo(bulan) {
+  const { db, fsMod } = window.CLOUD;
+  const tabel = $('#tblRekapIntajo');
+  const dari = bulan + '-01', sampai = bulan + '-31';
+  const awal = dari > CUTOFF_REKAP_INTAJO ? dari : CUTOFF_REKAP_INTAJO;
+  const kol = fsMod.collection(db, 'klinik', KLINIK_ID, 'ringkasanIntajo');
+  const q = fsMod.query(kol,
+    fsMod.where('tanggal', '>=', awal), fsMod.where('tanggal', '<=', sampai),
+    fsMod.orderBy('tanggal', 'desc'));
+  const snap = await fsMod.getDocs(q);
+
+  const baris = [];
+  snap.forEach((d) => baris.push(d.data()));
+
+  if (!baris.length) {
+    tabel.innerHTML = `<tbody><tr><td class="muted">Belum ada data untuk bulan ini.</td></tr></tbody>`;
+    return;
+  }
+
+  const total = baris.reduce((s, r) => ({
+    manadoP: s.manadoP + (r.cabang.manado.pendapatan || 0),
+    manadoK: s.manadoK + (r.cabang.manado.pengeluaran || 0),
+    tomohonP: s.tomohonP + (r.cabang.tomohon.pendapatan || 0),
+    tomohonK: s.tomohonK + (r.cabang.tomohon.pengeluaran || 0),
+    untung: s.untung + (r.gabungan.keuntungan || 0),
+  }), { manadoP: 0, manadoK: 0, tomohonP: 0, tomohonK: 0, untung: 0 });
+
+  const baris2tgl = (t) => {
+    const [y, m, tgl] = t.split('-');
+    return `${tgl} ${NAMA_BULAN[Number(m) - 1].slice(0, 3)}`;
+  };
+
+  tabel.innerHTML = `
+    <thead><tr>
+      <th>Tanggal</th><th>Pendapatan Manado</th><th>Pengeluaran Manado</th>
+      <th>Pendapatan Tomohon</th><th>Pengeluaran Tomohon</th><th>Keuntungan Total</th>
+    </tr></thead>
+    <tbody>${baris.map((r) => `<tr>
+      <td>${baris2tgl(r.tanggal)}</td>
+      <td class="num">${rp(r.cabang.manado.pendapatan)}</td>
+      <td class="num">${rp(r.cabang.manado.pengeluaran)}</td>
+      <td class="num">${rp(r.cabang.tomohon.pendapatan)}</td>
+      <td class="num">${rp(r.cabang.tomohon.pengeluaran)}</td>
+      <td class="num"><b>${rp(r.gabungan.keuntungan)}</b></td>
+    </tr>`).join('')}</tbody>
+    <tfoot><tr>
+      <td>Total</td>
+      <td class="num">${rp(total.manadoP)}</td>
+      <td class="num">${rp(total.manadoK)}</td>
+      <td class="num">${rp(total.tomohonP)}</td>
+      <td class="num">${rp(total.tomohonK)}</td>
+      <td class="num"><b>${rp(total.untung)}</b></td>
+    </tr></tfoot>`;
+}
+
+$('#btnRekapIntajo')?.addEventListener('click', async () => {
+  const panel = $('#panelRekapIntajo');
+  panel.hidden = !panel.hidden;
+  if (panel.hidden || !window.CLOUD) return;
+  await isiDropdownRekapIntajo();
+  await renderRekapIntajo($('#rekapIntajoBulan').value);
+});
+$('#rekapIntajoBulan')?.addEventListener('change', (e) => renderRekapIntajo(e.target.value));
 
 /* ============================ DASHBOARD ============================ */
 function renderDashboard() {

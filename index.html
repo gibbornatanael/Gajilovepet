@@ -119,8 +119,16 @@
             <h2>Klinik — <span id="intajoTanggal"></span></h2>
             <p class="muted">Pendapatan, pengeluaran &amp; keuntungan dari intajo.com, per cabang</p>
             <button class="btn ghost" id="btnTarikIntajo" type="button">Tarik data sekarang</button>
+            <button class="btn ghost" id="btnRekapIntajo" type="button">Lihat detail</button>
           </div>
           <div class="stat-row" id="intajoRow"></div>
+          <div id="panelRekapIntajo" hidden style="margin-top:12px">
+            <label class="period-picker">
+              <span class="sr-only">Bulan</span>
+              <select id="rekapIntajoBulan"></select>
+            </label>
+            <div class="table-scroll"><table class="tbl" id="tblRekapIntajo"></table></div>
+          </div>
         </div>
 
         <div class="grid-2">
