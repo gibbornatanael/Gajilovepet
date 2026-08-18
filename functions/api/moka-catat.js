@@ -79,7 +79,7 @@ export async function catatKeMokaKalauWaktunya(env) {
     const kind = keuntungan > 0 ? 'income' : 'expense';
     const hasil = await catatTransaksiMoka(env, {
       namaDompet: NAMA_DOMPET, kind, jumlah: keuntungan,
-      kategori: 'Klinik', catatan: 'Ringkasan intajo.com (otomatis)',
+      kategori: 'Klinik', catatan: 'Ringkasan intajo.com (otomatis)', tanggal: target,
     });
 
     await tulisDokumen(env, GUARD_PATH, {

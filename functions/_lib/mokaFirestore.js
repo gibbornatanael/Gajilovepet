@@ -132,14 +132,6 @@ function idTransaksi() {
   return Math.random().toString(36).slice(2, 9);
 }
 
-/* Tanggal WITA (Asia/Makassar, UTC+8) format YYYY-MM-DD — cocok dengan
-   witaDateISO() di MokaFamilyOS, supaya transaksi ini masuk hitungan hari
-   yang benar di ritual "tutup hari" mereka. */
-function tanggalWitaHariIni() {
-  const d = new Date(Date.now() + 8 * 60 * 60 * 1000);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-}
-
 /* Baca-ubah-tulis di dalam Firestore transaction sungguhan (bukan
    get-lalu-set) — supaya tidak pernah bentrok dengan simpanan dari HP
    siapa pun yang sedang membuka MokaFamilyOS di saat yang sama. Retry
@@ -191,8 +183,12 @@ async function transaksiKeluarga(env, mutator, { percobaan = 3 } = {}) {
 
 /* Fungsi utama dipakai dari luar: catat satu transaksi ke dompet bernama
    namaDompet (dicocokkan tanpa peduli besar/kecil huruf — dompetnya harus
-   sudah ada, dibuat manual lewat aplikasi MokaFamilyOS). */
-export async function catatTransaksiMoka(env, { namaDompet, kind, jumlah, kategori, catatan }) {
+   sudah ada, dibuat manual lewat aplikasi MokaFamilyOS). "tanggal" WAJIB
+   tanggal kejadiannya (YYYY-MM-DD, WITA) — BUKAN tanggal saat fungsi ini
+   dipanggil, supaya transaksi susulan (dicatat lewat retry sesudah lewat
+   tengah malam) tetap tercatat di hari yang benar, cocok dengan hitungan
+   "tutup hari" MokaFamilyOS sendiri. */
+export async function catatTransaksiMoka(env, { namaDompet, kind, jumlah, kategori, catatan, tanggal }) {
   return transaksiKeluarga(env, async (state) => {
     const dompet = (state.wallets || []).find(
       (w) => String(w.name || '').trim().toUpperCase() === namaDompet.trim().toUpperCase()
@@ -202,7 +198,7 @@ export async function catatTransaksiMoka(env, { namaDompet, kind, jumlah, katego
     const transaksi = {
       id: idTransaksi(), walletId: dompet.id, kind,
       category: kategori, amount: Math.abs(jumlah),
-      date: tanggalWitaHariIni(), note: catatan,
+      date: tanggal, note: catatan,
     };
     state.transactions = state.transactions || [];
     state.transactions.push(transaksi);
