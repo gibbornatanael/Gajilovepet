@@ -21,6 +21,7 @@ import {
   onRequestPostTarik as intajoTarikHandler,
   jalankanKalauWaktunya,
 } from './functions/api/intajo-sync.js';
+import { onRequestPost as mokaCatatHandler, catatKeMokaKalauWaktunya } from './functions/api/moka-catat.js';
 
 export default {
   async fetch(request, env) {
@@ -51,6 +52,11 @@ export default {
         ? intajoTarikHandler({ request, env })
         : new Response('Gunakan POST', { status: 405 });
     }
+    if (url.pathname === '/api/moka-catat') {
+      return request.method === 'POST'
+        ? mokaCatatHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
 
     // Bukan /api/* → layani sebagai berkas statis (index.html, lapor.html,
     // css/, js/, icons/, sw.js, dst.) persis seperti Cloudflare Pages
@@ -58,14 +64,21 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // Cron Trigger (lihat wrangler.jsonc) berdetak tiap 30 menit, tapi
-  // tarikan sungguhan hanya terjadi kalau jam undian berikutnya sudah
-  // lewat — jaraknya diacak 2,5–7 jam supaya tidak berpola.
-  // Lihat jalankanKalauWaktunya() di functions/api/intajo-sync.js.
+  // Cron Trigger (lihat wrangler.jsonc) berdetak tiap 30 menit, dua
+  // pekerjaan independen nebeng di detak yang sama:
+  //  1. jalankanKalauWaktunya   — tarikan intajo acak tiap 2,5–7 jam.
+  //  2. catatKeMokaKalauWaktunya — jam 23:30 WITA, catat keuntungan hari
+  //     itu ke dompet LOVEPET di MokaFamilyOS (detak berikutnya jadi
+  //     mekanisme retry otomatis kalau gagal).
   async scheduled(event, env, ctx) {
     ctx.waitUntil(
       jalankanKalauWaktunya(env).catch((e) => {
         console.error('cron intajo-sync gagal:', e && e.stack);
+      })
+    );
+    ctx.waitUntil(
+      catatKeMokaKalauWaktunya(env).catch((e) => {
+        console.error('cron moka-catat gagal:', e && e.stack);
       })
     );
   },
