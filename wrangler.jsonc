@@ -20,9 +20,12 @@
     "not_found_handling": "404-page"
   },
 
-  // 16:00 UTC = 00:00 WITA (UTC+8) hari berikutnya — sinkronisasi harian
-  // ringkasan intajo.com (lihat worker.js: scheduled(), functions/api/intajo-sync.js).
+  // Detak tiap 30 menit — BUKAN berarti menarik data tiap 30 menit.
+  // Cron Cloudflare hanya bisa berjadwal tetap, padahal tarikan intajo.com
+  // sengaja dibuat tidak berpola: tiap detak cuma mengecek apakah jam
+  // undian berikutnya (acak 2,5–7 jam) sudah lewat.
+  // Lihat jalankanKalauWaktunya() di functions/api/intajo-sync.js.
   "triggers": {
-    "crons": ["0 16 * * *"]
+    "crons": ["0,30 * * * *"]
   }
 }

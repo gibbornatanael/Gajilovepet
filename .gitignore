@@ -1,5 +1,10 @@
 # Berkas Numbers berisi data gaji asli — jangan ikut ke repository
 *.numbers
+
+# Tangkapan mentah dashboard intajo.com (dipakai saat menelusuri bug angka 0).
+# Berisi angka keuangan klinik, dan seluruh isi repo disajikan sebagai berkas
+# statis oleh Worker — jadi jangan pernah ikut ter-commit.
+json dari intajo.com
 .DS_Store
 node_modules/
 .wrangler/

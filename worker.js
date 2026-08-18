@@ -16,7 +16,11 @@
 import { onRequestPost as notaHandler } from './functions/api/nota.js';
 import { onRequestPost as telegramHandler } from './functions/api/telegram.js';
 import { onRequestPost as notifyHandler } from './functions/api/notify.js';
-import { onRequestPost as intajoSyncHandler, jalankanSinkronisasi, tanggalKemarinWita } from './functions/api/intajo-sync.js';
+import {
+  onRequestPost as intajoSyncHandler,
+  onRequestPostTarik as intajoTarikHandler,
+  jalankanKalauWaktunya,
+} from './functions/api/intajo-sync.js';
 
 export default {
   async fetch(request, env) {
@@ -42,6 +46,11 @@ export default {
         ? intajoSyncHandler({ request, env })
         : new Response('Gunakan POST', { status: 405 });
     }
+    if (url.pathname === '/api/intajo-tarik') {
+      return request.method === 'POST'
+        ? intajoTarikHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
 
     // Bukan /api/* → layani sebagai berkas statis (index.html, lapor.html,
     // css/, js/, icons/, sw.js, dst.) persis seperti Cloudflare Pages
@@ -49,11 +58,13 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // Cron Trigger (lihat wrangler.jsonc) — jalan sendiri tiap 00:00 WITA,
-  // ambil ringkasan intajo.com hari sebelumnya, simpan ke Firestore.
+  // Cron Trigger (lihat wrangler.jsonc) berdetak tiap 30 menit, tapi
+  // tarikan sungguhan hanya terjadi kalau jam undian berikutnya sudah
+  // lewat — jaraknya diacak 2,5–7 jam supaya tidak berpola.
+  // Lihat jalankanKalauWaktunya() di functions/api/intajo-sync.js.
   async scheduled(event, env, ctx) {
     ctx.waitUntil(
-      jalankanSinkronisasi(env, tanggalKemarinWita()).catch((e) => {
+      jalankanKalauWaktunya(env).catch((e) => {
         console.error('cron intajo-sync gagal:', e && e.stack);
       })
     );

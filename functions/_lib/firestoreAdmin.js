@@ -78,6 +78,45 @@ function keFirestoreValue(v) {
   return { stringValue: String(v) };
 }
 
+/* Kebalikan keFirestoreValue — ubah "Value" Firestore REST kembali ke nilai
+   JS biasa. Angka selalu dikembalikan sebagai number (integerValue dikirim
+   Firestore sebagai string). */
+function dariFirestoreValue(v) {
+  if (!v || typeof v !== 'object') return null;
+  if ('nullValue' in v) return null;
+  if ('stringValue' in v) return v.stringValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('integerValue' in v) return Number(v.integerValue);
+  if ('doubleValue' in v) return Number(v.doubleValue);
+  if ('timestampValue' in v) return v.timestampValue;
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(dariFirestoreValue);
+  if ('mapValue' in v) {
+    const fields = v.mapValue.fields || {};
+    const hasil = {};
+    for (const k of Object.keys(fields)) hasil[k] = dariFirestoreValue(fields[k]);
+    return hasil;
+  }
+  return null;
+}
+
+/* Baca satu dokumen. Kembalikan null kalau dokumennya belum ada (404) —
+   itu keadaan normal, bukan error (mis. jadwal yang belum pernah ditulis). */
+export async function bacaDokumen(env, pathSegmen) {
+  const { accessToken, projectId } = await ambilAccessToken(env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  const nama = pathSegmen.join('/');
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${nama}`;
+
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('Firestore menolak baca (' + res.status + '): ' + (await res.text()));
+
+  const j = await res.json();
+  const fields = j.fields || {};
+  const hasil = {};
+  for (const k of Object.keys(fields)) hasil[k] = dariFirestoreValue(fields[k]);
+  return hasil;
+}
+
 /* Timpa (bukan gabung) satu dokumen Firestore lewat REST API. */
 export async function tulisDokumen(env, pathSegmen, data) {
   const { accessToken, projectId } = await ambilAccessToken(env.FIREBASE_SERVICE_ACCOUNT_JSON);

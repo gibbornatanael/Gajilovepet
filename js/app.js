@@ -257,12 +257,12 @@ function render(hanya) {
 }
 
 /* ====================== RINGKASAN INTAJO (klinik) ====================== */
-// Cocok dengan tanggalKemarinWita() di functions/api/intajo-sync.js —
-// dokumen ditulis sekali per hari oleh Cron Trigger jam 00:00 WITA.
-function tanggalKemarinWita() {
-  const witaMs = Date.now() + 8 * 60 * 60 * 1000;
-  const d = new Date(witaMs);
-  d.setUTCDate(d.getUTCDate() - 1);
+// Cocok dengan tanggalWita() di functions/api/intajo-sync.js — Worker
+// menarik ulang tiap 2,5–7 jam (acak) dan menulis dokumen hari ini serta
+// kemarin, jadi di sini hari ini dulu, mundur ke kemarin kalau belum ada.
+function tanggalWita(geser = 0) {
+  const d = new Date(Date.now() + 8 * 60 * 60 * 1000);
+  d.setUTCDate(d.getUTCDate() + geser);
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
@@ -270,11 +270,13 @@ async function renderIntajo() {
   const kartu = $('#cardIntajo');
   if (!window.CLOUD || !kartu) return;
   const { db, fsMod } = window.CLOUD;
-  const tanggal = tanggalKemarinWita();
   try {
-    const ref = fsMod.doc(db, 'klinik', KLINIK_ID, 'ringkasanIntajo', tanggal);
-    const snap = await fsMod.getDoc(ref);
-    if (!snap.exists()) { kartu.hidden = true; return; }
+    let tanggal = null, snap = null;
+    for (const kandidat of [tanggalWita(0), tanggalWita(-1)]) {
+      const s = await fsMod.getDoc(fsMod.doc(db, 'klinik', KLINIK_ID, 'ringkasanIntajo', kandidat));
+      if (s.exists()) { tanggal = kandidat; snap = s; break; }
+    }
+    if (!snap) { kartu.hidden = true; return; }
     const d = snap.data();
     const [y, m, tgl] = tanggal.split('-');
     $('#intajoTanggal').textContent = `${tgl} ${NAMA_BULAN[Number(m) - 1]} ${y}`;
@@ -288,6 +290,38 @@ async function renderIntajo() {
   } catch (e) {
     console.error('renderIntajo:', e);
     kartu.hidden = true;
+  }
+}
+
+/* Tombol "Tarik data sekarang" — biasanya tidak perlu ditekan (Worker
+   menarik sendiri tiap 2,5–7 jam), gunanya kalau ingin angka terbaru saat
+   itu juga. Kredensial intajo.com ada di Worker, bukan di sini; yang
+   dikirim cuma idToken sebagai bukti bahwa yang menekan adalah pemilik. */
+async function tarikIntajoSekarang(tombol) {
+  const auth = window.CLOUD && window.CLOUD.auth;
+  if (!auth || !auth.currentUser) return alert('Masuk dulu sebagai pemilik.');
+
+  const semula = tombol.textContent;
+  tombol.disabled = true;
+  tombol.textContent = 'Menarik…';
+  try {
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/intajo-tarik', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.ok) throw new Error(j.error || 'Gagal (' + res.status + ')');
+    await renderIntajo();
+    tombol.textContent = 'Data diperbarui';
+  } catch (e) {
+    console.error('tarikIntajoSekarang:', e);
+    alert('Gagal menarik data: ' + e.message);
+    tombol.textContent = semula;
+  } finally {
+    tombol.disabled = false;
+    setTimeout(() => { tombol.textContent = semula; }, 3000);
   }
 }
 
@@ -1366,7 +1400,10 @@ function grafik(el, opt) {
 /* ============================ MULAI ============================ */
 pindahView(location.hash.slice(1) || 'dashboard');
 
+$('#btnTarikIntajo')?.addEventListener('click', (ev) => tarikIntajoSekarang(ev.currentTarget));
+
 document.addEventListener('cloud-siap', () => {
   const aktif = ($('.view.is-active') || {}).id?.replace('view-', '');
   if (aktif === 'kelola') { renderKaryawan(); renderPengaturan(); }
+  if (aktif === 'dashboard') renderIntajo();
 });

@@ -5,9 +5,8 @@
    intajo.com TIDAK punya API resmi — ini otomasi login pakai akun Anda
    sendiri (email/password disimpan sebagai secret Cloudflare, tidak pernah
    di kode). Endpointnya ditemukan lewat DevTools browser:
-     - POST /login/                          (field: email, password)
-     - GET  /secureAPI/branch/change/<uuid>   (pindah cabang aktif)
-     - GET  /dashboard/finance/value          (data keuangan cabang aktif)
+     - POST /login/                   (field: email, password)
+     - GET  /dashboard/finance/value  (data keuangan SEMUA cabang sekaligus)
 
    CATATAN RAPUH: kalau intajo.com mengubah tampilan/struktur API mereka,
    kode ini bisa berhenti berfungsi tanpa peringatan — bukan bug di sini,
@@ -43,13 +42,6 @@ function ambilSessionCookie(res) {
   return m ? m[0] : null;
 }
 
-async function pindahCabang(cookie, branchId) {
-  const res = await fetch(`${BASE}/secureAPI/branch/change/${branchId}`, {
-    headers: { Cookie: cookie, 'X-Requested-With': 'XMLHttpRequest' },
-  });
-  if (!res.ok) throw new Error('Gagal pindah cabang (' + res.status + ')');
-}
-
 async function ambilDataKeuangan(cookie) {
   const res = await fetch(`${BASE}/dashboard/finance/value`, {
     headers: { Cookie: cookie, Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
@@ -58,38 +50,46 @@ async function ambilDataKeuangan(cookie) {
   return res.json();
 }
 
-/* trans_date dari intajo formatnya "Tue, 30 Jun 2026 17:00:00 GMT" —
-   kita cocokkan lewat bagian TANGGAL-nya saja (UTC), diformat YYYY-MM-DD. */
+/* trans_date dari intajo formatnya "Tue, 30 Jun 2026 17:00:00 GMT".
+   PENTING: jam 17:00 GMT itu BUKAN sore hari — itu tengah malam waktu
+   Indonesia, yaitu awal hari BERIKUTNYA. Jadi baris "30 Jun 17:00 GMT"
+   sebenarnya transaksi tanggal 1 Juli. Membaca bagian tanggalnya mentah-
+   mentah (yang dilakukan versi sebelumnya) menggeser semuanya mundur satu
+   hari, itu sebabnya angka hari kemarin selalu 0. Digeser +8 jam (WITA)
+   dulu, baru diambil tanggalnya. */
 function tanggalDari(transDateStr) {
-  const d = new Date(transDateStr);
+  const d = new Date(new Date(transDateStr).getTime() + 8 * 60 * 60 * 1000);
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
-function jumlahkanBlok(blokList, namaBlok, tanggalTarget) {
-  const blok = blokList.find((b) => b.name === namaBlok);
+/* Satu respons /dashboard/finance/value berisi blok untuk SEMUA cabang —
+   nama bloknya sama persis, yang membedakan hanya field "branch". Versi
+   sebelumnya mencari blok cuma lewat nama, jadi selalu dapat blok cabang
+   pertama (Manado) untuk kedua cabang — itu sebabnya angka Manado dan
+   Tomohon selalu kembar dan "gabungan" cuma Manado dikali dua. */
+function jumlahkanBlok(blokList, branchId, namaBlok, tanggalTarget) {
+  const blok = blokList.find((b) => b.branch === branchId && b.name === namaBlok);
   if (!blok) return 0;
-  return blok.data
+  return (blok.data || [])
     .filter((row) => tanggalDari(row.trans_date) === tanggalTarget)
     .reduce((s, row) => s + (Number(row.nominal) || 0), 0);
 }
 
-/* Hasil: { pendapatan, pengeluaran, keuntungan } untuk cabang yang SEDANG
-   aktif di sesi ini, untuk satu tanggal (format YYYY-MM-DD). */
-async function ringkasanCabangAktif(cookie, tanggalTarget) {
-  const data = await ambilDataKeuangan(cookie);
-  const pendapatan = jumlahkanBlok(data, 'Pendapatan Bulan Berjalan Pendapatan Tahun Ini', tanggalTarget);
-  const pengeluaran = jumlahkanBlok(data, 'Pengeluaran Bulan Berjalan Pengeluaran Tahun Ini', tanggalTarget);
+function ringkasanCabang(data, branchId, tanggalTarget) {
+  const pendapatan = jumlahkanBlok(data, branchId, 'Pendapatan Bulan Berjalan Pendapatan Tahun Ini', tanggalTarget);
+  const pengeluaran = jumlahkanBlok(data, branchId, 'Pengeluaran Bulan Berjalan Pengeluaran Tahun Ini', tanggalTarget);
   return { pendapatan, pengeluaran, keuntungan: pendapatan - pengeluaran };
 }
 
-/* Fungsi utama: login sekali, lalu ambil ringkasan tiap cabang di CABANG
-   untuk tanggal tertentu. */
+/* Fungsi utama: login sekali, ambil data sekali, lalu pisahkan per cabang.
+   Tidak perlu berpindah cabang di sesi intajo — datanya sudah lengkap. */
 export async function ambilRingkasanSemuaCabang(email, password, tanggalTarget) {
   const cookie = await login(email, password);
+  const data = await ambilDataKeuangan(cookie);
+
   const hasil = {};
   for (const kunci of Object.keys(CABANG)) {
-    await pindahCabang(cookie, CABANG[kunci].id);
-    hasil[kunci] = await ringkasanCabangAktif(cookie, tanggalTarget);
+    hasil[kunci] = ringkasanCabang(data, CABANG[kunci].id, tanggalTarget);
   }
   return hasil;
 }
