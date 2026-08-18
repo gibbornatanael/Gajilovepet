@@ -280,12 +280,25 @@ async function renderIntajo() {
     const d = snap.data();
     const [y, m, tgl] = tanggal.split('-');
     $('#intajoTanggal').textContent = `${tgl} ${NAMA_BULAN[Number(m) - 1]} ${y}`;
-    const baris = (label, c) => `
-      <div class="stat"><div class="k">Pendapatan ${label}</div><div class="v">${rp(c.pendapatan)}</div></div>
-      <div class="stat"><div class="k">Pengeluaran ${label}</div><div class="v">${rp(c.pengeluaran)}</div></div>
-      <div class="stat"><div class="k">Keuntungan ${label}</div><div class="v">${rp(c.keuntungan)}</div></div>`;
+    const blok = (label, c) => `
+      <div class="cabang-blok">
+        <p class="cabang-judul">${label}</p>
+        <div class="cabang-row">
+          <div class="stat"><div class="k">Pendapatan</div><div class="v">${rp(c.pendapatan)}</div></div>
+          <div class="stat"><div class="k">Pengeluaran</div><div class="v">${rp(c.pengeluaran)}</div></div>
+          <div class="stat ${c.keuntungan < 0 ? 'untung-minus' : 'untung-plus'}"><div class="k">Keuntungan</div><div class="v">${rp(c.keuntungan)}</div></div>
+        </div>
+      </div>`;
     $('#intajoRow').innerHTML =
-      baris('Manado', d.cabang.manado) + baris('Tomohon', d.cabang.tomohon) + baris('Total', d.gabungan);
+      blok('Manado', d.cabang.manado) + blok('Tomohon', d.cabang.tomohon) +
+      `<div class="cabang-blok">
+        <p class="cabang-judul">Total</p>
+        <div class="cabang-row">
+          <div class="stat"><div class="k">Pendapatan</div><div class="v">${rp(d.gabungan.pendapatan)}</div></div>
+          <div class="stat"><div class="k">Pengeluaran</div><div class="v">${rp(d.gabungan.pengeluaran)}</div></div>
+          <div class="stat ${d.gabungan.keuntungan < 0 ? 'untung-minus' : 'untung-plus'}"><div class="k">Keuntungan</div><div class="v">${rp(d.gabungan.keuntungan)}</div></div>
+        </div>
+      </div>`;
     kartu.hidden = false;
   } catch (e) {
     console.error('renderIntajo:', e);

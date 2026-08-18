@@ -304,6 +304,30 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 .stat .d.up { color: var(--good); }
 .stat .d.down { color: var(--danger); }
 
+/* ---- Ringkasan intajo per cabang: 3 kartu sejajar, tetap sejajar di HP ---- */
+.cabang-blok { margin-bottom: 14px; }
+.cabang-blok .cabang-judul {
+  font-size: .78rem; font-weight: 700; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: .05em; margin: 0 0 8px;
+}
+.cabang-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cabang-row > * { min-width: 0; }
+@media (min-width: 760px) { .cabang-row { gap: 12px; } }
+.cabang-row .stat { padding: 10px 8px; text-align: center; }
+@media (min-width: 480px) { .cabang-row .stat { padding: 13px 14px; text-align: left; } }
+.cabang-row .stat .v { font-size: 1rem; word-break: break-word; }
+@media (min-width: 480px) { .cabang-row .stat .v { font-size: 1.22rem; } }
+.stat.untung-plus {
+  background: color-mix(in srgb, var(--good) 16%, var(--surface-1));
+  border-color: color-mix(in srgb, var(--good) 30%, var(--border));
+}
+.stat.untung-plus .v { color: var(--good); }
+.stat.untung-minus {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface-1));
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+}
+.stat.untung-minus .v { color: var(--danger); }
+
 /* ========================= DAFTAR (HP) ========================= */
 .list { margin: -4px -4px 0; }
 .list-row {
