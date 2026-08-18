@@ -15,9 +15,11 @@
 
 const BASE = 'https://intajo.com';
 
+/* ID branch di intajo.com sempat tertukar di sini — nama cabang yang benar
+   untuk tiap ID sudah dicek ulang dari dashboard intajo.com langsung. */
 export const CABANG = {
-  manado: { nama: 'Manado', id: 'cc1df7cb-1a58-4e81-9ee3-6a9468fab8b2' },
-  tomohon: { nama: 'Tomohon', id: 'ef9cbd0b-f50a-4ef2-9bd9-516082f7b98a' },
+  manado: { nama: 'Manado', id: 'ef9cbd0b-f50a-4ef2-9bd9-516082f7b98a' },
+  tomohon: { nama: 'Tomohon', id: 'cc1df7cb-1a58-4e81-9ee3-6a9468fab8b2' },
 };
 
 /* Login, kembalikan cookie sesi (string "session=...") untuk dipakai
