@@ -133,6 +133,31 @@
   background: var(--surface-0); color: var(--text-primary);
 }
 
+/* -------------------------------- Kasbon -------------------------------- */
+.kasbon-form { display: flex; flex-direction: column; gap: 12px; }
+.kasbon-form textarea {
+  width: 100%; resize: vertical; padding: 9px 11px; font: inherit; font-size: .88rem;
+  border: 1px solid var(--border-strong); border-radius: 10px;
+  background: var(--surface-0); color: var(--text-primary);
+}
+#kasbonEstimasi { margin: -4px 0 0; }
+
+.kasbon-aktif { display: flex; flex-direction: column; gap: 10px; }
+.kasbon-aktif .kasbon-baris { display: flex; justify-content: space-between; font-size: .88rem; }
+.kasbon-aktif .kasbon-baris b { font-variant-numeric: tabular-nums; }
+.kasbon-progress {
+  height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden;
+}
+.kasbon-progress > span { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+
+.kasbon-status {
+  display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px;
+  font-size: .72rem; font-weight: 650;
+}
+.kasbon-status.menunggu { background: color-mix(in srgb, var(--brand) 16%, var(--surface-1)); color: var(--brand-ink); }
+.kasbon-status.disetujui { background: color-mix(in srgb, var(--good) 16%, var(--surface-1)); color: var(--good); }
+.kasbon-status.ditolak { background: color-mix(in srgb, var(--danger) 14%, var(--surface-1)); color: var(--danger); }
+
 /* ------------------------------ Chat manager ------------------------------ */
 #pane-chat.is-active {
   display: flex; flex-direction: column;

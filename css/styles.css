@@ -773,6 +773,17 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 .otorisasi .ot-teks p { margin: 3px 0 0; font-size: .8rem; color: var(--text-secondary); }
 .otorisasi .ot-minta { color: var(--danger); font-weight: 650; }
 
+/* =========================================================================
+   KASBON (tab Kasbon, sisi pemilik)
+   ========================================================================= */
+.ot-teks { flex: 1; min-width: 220px; }
+.ot-teks b { font-size: .92rem; }
+.ot-teks p { margin: 3px 0 0; font-size: .8rem; color: var(--text-secondary); }
+.kasbon-progress {
+  height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden;
+}
+.kasbon-progress > span { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+
 /* Cap kecil di sudut slip saat sudah pernah direvisi */
 .slip-cap {
   display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 999px;

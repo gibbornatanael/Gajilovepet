@@ -1,7 +1,7 @@
 {
-  "name": "Performance Bonus LovePet",
-  "short_name": "Bonus Love Pet",
-  "description": "Lapor lembur, rawat inap, styling, dan operasi — LOVE Pet Clinic",
+  "name": "Lovepet Crew",
+  "short_name": "Lovepet Crew",
+  "description": "Lapor lembur, rawat inap, styling, operasi, dan ajukan kasbon — LOVE Pet Clinic",
   "start_url": "./lapor.html",
   "scope": "./",
   "display": "standalone",

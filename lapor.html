@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Bonus Love Pet">
+<meta name="apple-mobile-web-app-title" content="Lovepet Crew">
 <meta name="theme-color" content="#0f7a6c">
 <meta name="robots" content="noindex, nofollow">
-<title>Performance Bonus LovePet</title>
+<title>Lovepet Crew</title>
 <link rel="manifest" href="manifest-lapor.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
@@ -21,8 +21,8 @@
 <div class="login-overlay" id="loginOverlay">
   <form class="login-card" id="loginForm">
     <div class="login-mark">🐾</div>
-    <h2>Performance Bonus LovePet</h2>
-    <p class="muted">Masuk untuk melaporkan lembur, rawat inap, styling, dan operasi.</p>
+    <h2>Lovepet Crew</h2>
+    <p class="muted">Masuk untuk melaporkan lembur, rawat inap, styling, operasi, dan ajukan kasbon.</p>
 
     <label class="field"><span class="f-label">Nama pengguna</span>
       <input type="text" id="loginUser" autocomplete="username" required placeholder="mis. risa" autocapitalize="off">
@@ -43,7 +43,7 @@
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark">🐾</span>
-      <span class="brand-text"><strong>Performance Bonus</strong><small id="namaKaryawan">—</small></span>
+      <span class="brand-text"><strong>Lovepet Crew</strong><small id="namaKaryawan">—</small></span>
     </div>
     <div class="topbar-actions">
       <span class="cloud-status" id="cloudStatus" hidden></span>
@@ -58,6 +58,7 @@
       <button class="seg is-active" data-seg="lapor" role="tab">Lapor</button>
       <button class="seg" data-seg="capaian" role="tab">Capaian</button>
       <button class="seg" data-seg="slip" role="tab">Slip Gaji</button>
+      <button class="seg" data-seg="kasbon" role="tab">Kasbon</button>
       <button class="seg" data-seg="chat" role="tab">Chat<span class="seg-badge" id="segBadgeChat" hidden></span></button>
     </div>
 
@@ -118,6 +119,39 @@
             <button type="button" class="btn" id="btnBatalRevisi">Batal</button>
           </div>
         </form>
+      </div>
+    </section>
+
+    <!-- ---------------- KASBON ---------------- -->
+    <section class="segpane" id="pane-kasbon">
+      <div class="card" id="kasbonAktifCard" hidden>
+        <div class="card-head"><h2>Kasbon Aktif</h2></div>
+        <div id="kasbonAktifIsi"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Ajukan Kasbon</h2>
+          <p class="muted">Pilih sendiri berapa potongan cicilannya per bulan. Menunggu persetujuan manager.</p>
+        </div>
+        <form class="kasbon-form" id="kasbonForm">
+          <label class="field"><span class="f-label">Jumlah diajukan (Rp)</span>
+            <input type="number" id="kasbonJumlah" min="0" step="10000" required inputmode="numeric">
+          </label>
+          <label class="field"><span class="f-label">Potongan per bulan (Rp)</span>
+            <input type="number" id="kasbonCicilan" min="0" step="10000" required inputmode="numeric">
+          </label>
+          <p class="muted" id="kasbonEstimasi"></p>
+          <label class="field"><span class="f-label">Catatan (opsional)</span>
+            <textarea id="kasbonAlasan" rows="2" placeholder="Contoh: untuk keperluan mendesak…"></textarea>
+          </label>
+          <button type="submit" class="btn btn-primary btn-block" id="kasbonKirim">Kirim pengajuan</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Riwayat Pengajuan</h2></div>
+        <div id="kasbonRiwayat" class="riwayat-list"></div>
       </div>
     </section>
 

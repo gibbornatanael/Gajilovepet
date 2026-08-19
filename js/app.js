@@ -117,6 +117,26 @@ window.LovePet = {
      fungsi di berkas ini secara langsung. */
   toast: (m) => toast(m),
   cetak: (html) => cetak(html),
+
+  /* Dipakai js/kasbon.js sesudah sebuah pengajuan disetujui: kalau
+     karyawan itu sudah punya baris gaji di bulan yang sedang dibuka DAN
+     slipnya belum dikirim, kolom Hutang/Kasbon-nya langsung disegarkan
+     supaya pemilik tidak perlu menghitung & mengetik manual. Slip yang
+     sudah disetujui sengaja tidak disentuh — itu snapshot yang sudah
+     dijanjikan ke karyawan. */
+  terapkanKasbonKeBaris(empId) {
+    if (!window.Kasbon) return;
+    const r = rows(periode).find((x) => x.empId === empId);
+    if (!r) return;
+    const T = window.SlipTerbit;
+    const s = T && T.siap() ? T.status(empId, periode) : null;
+    if (s && s.status === 'disetujui') return;
+    const saran = window.Kasbon.cicilanSaran(empId);
+    if (!saran) return;
+    r.hutang = saran;
+    simpan(true);
+    render('input');
+  },
 };
 
 function periodeTerakhir() {
@@ -148,9 +168,9 @@ function kunciTahun(y) {
 function totalBulan(key) { return rows(key).reduce((s, r) => s + hitung(r).total, 0); }
 
 /* ============================ NAVIGASI ============================ */
-const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'chat', 'tahunan', 'kelola'];
+const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'chat', 'tahunan', 'kasbon', 'kelola'];
 // Tab yang di HP disembunyikan ke dalam sheet "Lainnya" (lihat #moreSheet di index.html)
-const VIEWS_LAINNYA = ['chat', 'tahunan', 'kelola'];
+const VIEWS_LAINNYA = ['chat', 'tahunan', 'kasbon', 'kelola'];
 
 function pindahView(nama) {
   // alias lama supaya tautan #karyawan / #pengaturan tetap jalan
@@ -253,6 +273,7 @@ function render(hanya) {
   if (aktif === 'slip')      renderSlipView();
   if (aktif === 'chat' && window.ChatPemilik) window.ChatPemilik.segarkan();
   if (aktif === 'tahunan')   renderTahunan();
+  if (aktif === 'kasbon' && window.Kasbon) window.Kasbon.segarkan();
   if (aktif === 'kelola')  { pasangSegmen(); renderKaryawan(); renderPengaturan(); }
 }
 
@@ -710,6 +731,8 @@ function renderRinci(data) {
           <label class="field"><span class="f-label">Denda / absen</span>${f('denda', r.denda, 50000)}</label>
           <label class="field"><span class="f-label">Hutang / kasbon</span>${f('hutang', r.hutang, 50000)}</label>
         </div>
+        ${window.Kasbon && window.Kasbon.cicilanSaran(r.empId)
+          ? `<p class="muted" style="font-size:.76rem;margin:-4px 0 0">Kasbon aktif — cicilan saran ${rp(window.Kasbon.cicilanSaran(r.empId))}/bulan. Lihat rinciannya di tab Kasbon.</p>` : ''}
         <label class="field"><span class="f-label">Catatan (tampil di slip)</span>
           <input type="text" data-i="${i}" data-f="catatan" value="${esc(r.catatan || '')}" placeholder="opsional">
         </label>
@@ -787,7 +810,11 @@ $('#btnTambahBaris').addEventListener('click', () => {
   const ada = new Set(rows(periode).map((r) => r.empId));
   const tambah = state.karyawan.filter((e) => e.aktif !== false && !ada.has(e.id));
   if (!tambah.length) { toast('Semua karyawan aktif sudah ada di bulan ini'); return; }
-  tambah.forEach((e) => state.payroll[periode].push(barisBaruUntuk(e, state.tarif)));
+  tambah.forEach((e) => {
+    const baris = barisBaruUntuk(e, state.tarif);
+    if (window.Kasbon) baris.hutang = window.Kasbon.cicilanSaran(e.id);
+    state.payroll[periode].push(baris);
+  });
   simpan(true); renderInput(); isiPeriode();
   toast(`${tambah.length} karyawan ditambahkan`);
 });
@@ -801,6 +828,12 @@ $('#btnSalinBulanLalu').addEventListener('click', () => {
     const baru = JSON.parse(JSON.stringify(r));
     KOMPONEN.forEach((k) => { baru.qty[k.id] = { mdo: 0, tmh: 0 }; });
     baru.denda = 0; baru.catatan = '';
+    // Kasbon aktif → pakai cicilan terbaru. Kalau tak ada kasbon aktif,
+    // biarkan nilai lama (mis. hutang manual lama yang belum lunas).
+    if (window.Kasbon) {
+      const saran = window.Kasbon.cicilanSaran(baru.empId);
+      if (saran) baru.hutang = saran;
+    }
     return baru;
   });
   simpan(true); renderInput(); isiPeriode();
@@ -905,8 +938,8 @@ function renderOtorisasi() {
       <p>${disetujui
         ? `Disetujui ${esc(s.disetujuiLabel)}${s.versi > 1 ? ` · revisi ke-${s.versi}` : ''}. ` +
           (s.revisiDiminta ? '<span class="ot-minta">Karyawan meminta revisi — lihat tab Chat.</span>'
-                           : 'Ia sudah bisa membukanya di halaman Performance Bonus.')
-        : 'Setelah disetujui, slip ini langsung muncul di halaman Performance Bonus miliknya.'}</p>
+                           : 'Ia sudah bisa membukanya di halaman Lovepet Crew.')
+        : 'Setelah disetujui, slip ini langsung muncul di halaman Lovepet Crew miliknya.'}</p>
     </div>
     ${disetujui
       ? `<button class="btn btn-danger" data-ot="tarik">Tarik otorisasi</button>
@@ -925,9 +958,14 @@ async function aksiOtorisasi(aksi, r, tombol) {
       if (!confirm(`Tarik otorisasi slip ${r.nama} — ${labelPeriode(periode)}?\n\n` +
         'Ia tidak bisa mengunduhnya lagi sampai Anda menyetujui ulang.')) return;
       await T.tarik(r.empId, periode);
+      // Potongan kasbon bulan ini belum jadi final — kembalikan sisanya
+      // sampai slip ini disetujui ulang. Kegagalan di sini tidak boleh
+      // membuat otorisasi yang sudah ditarik terlihat gagal.
+      if (window.Kasbon) await window.Kasbon.terapkanPotongan(r.empId, periode, 0).catch((e) => console.warn('Kasbon (tarik):', e));
       toast('Otorisasi ditarik — slip disembunyikan dari karyawan');
     } else {
       await T.setujui(r.empId, periode, snapshotSlip(r), (emp(r.empId) || {}).authUid);
+      if (window.Kasbon) await window.Kasbon.terapkanPotongan(r.empId, periode, Number(r.hutang) || 0).catch((e) => console.warn('Kasbon (setujui):', e));
       toast(`Slip ${r.nama} dikirim — ia sudah bisa mengunduhnya`);
     }
   } catch (e) {

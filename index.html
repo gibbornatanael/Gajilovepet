@@ -50,6 +50,11 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
       <span>Rekap</span>
     </button>
+    <button class="tabitem tab-desktop-only" data-view="kasbon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
+      <span>Kasbon</span>
+      <span class="tab-badge" hidden></span>
+    </button>
     <button class="tabitem tab-desktop-only" data-view="kelola">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
       <span>Kelola</span>
@@ -79,6 +84,11 @@
     <button class="tabitem" data-view="tahunan">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
       <span>Rekap</span>
+    </button>
+    <button class="tabitem" data-view="kasbon">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
+      <span>Kasbon</span>
+      <span class="tab-badge" hidden></span>
     </button>
     <button class="tabitem" data-view="kelola">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
@@ -341,6 +351,31 @@
         </div>
       </section>
 
+      <!-- ====================== KASBON ====================== -->
+      <section class="view" id="view-kasbon">
+        <div class="page-head">
+          <h1>Kasbon Karyawan</h1>
+          <p class="muted">Setujui pengajuan, pantau kasbon aktif — cicilannya otomatis masuk ke slip gaji tiap bulan.</p>
+        </div>
+
+        <div class="stat-row" id="kasbonStat"></div>
+
+        <div class="card">
+          <div class="card-head"><h2>Permintaan Menunggu</h2></div>
+          <div id="kasbonPermintaanList" class="emp-cards"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Kasbon Aktif</h2></div>
+          <div id="kasbonAktifList" class="emp-cards"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Riwayat Selesai / Ditolak</h2></div>
+          <div id="kasbonRiwayatList" class="table-scroll"></div>
+        </div>
+      </section>
+
       <!-- ====================== KELOLA ====================== -->
       <section class="view" id="view-kelola">
         <div class="page-head">
@@ -440,6 +475,7 @@
 <script type="module" src="js/provisioning.js"></script>
 <script type="module" src="js/nota.js"></script>
 <script type="module" src="js/slip-terbit.js"></script>
+<script type="module" src="js/kasbon.js"></script>
 <script type="module" src="js/chat.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

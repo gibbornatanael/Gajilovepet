@@ -1,5 +1,5 @@
 /* =========================================================================
-   lapor.js — logika halaman "Performance Bonus LovePet" (karyawan)
+   lapor.js — logika halaman "Lovepet Crew" (karyawan)
    -------------------------------------------------------------------------
    Butuh Firebase aktif (firebase-config.js terisi) — halaman ini TIDAK
    punya mode lokal, karena tujuannya memang mengirim laporan ke pemilik.
@@ -128,6 +128,7 @@ async function onAuthBerubah(user) {
     isiPeriodeKaryawan();
     await muatCapaian();
     dengarkanSlip();               // slip yang sudah disetujui pemilik
+    dengarkanKasbon();             // kasbon aktif & riwayat pengajuan
     dengarkanChat();               // percakapan dengan manager
     bersihkanFotoLama(user.uid);   // tidak ditunggu — jalan di latar belakang
   } catch (e) {
@@ -167,7 +168,7 @@ function pasangForm() {
     if (!b) return;
     modeLapor = b.dataset.seg;
     $$('#segLapor .seg').forEach((s) => s.classList.toggle('is-active', s === b));
-    ['lapor', 'capaian', 'slip', 'chat'].forEach((n) =>
+    ['lapor', 'capaian', 'slip', 'kasbon', 'chat'].forEach((n) =>
       $('#pane-' + n).classList.toggle('is-active', modeLapor === n));
     if (modeLapor === 'capaian') muatCapaian();
     if (modeLapor === 'chat') { gulirChatKeBawah(); tandaiChatTerbaca(); }
@@ -175,6 +176,7 @@ function pasangForm() {
   $('#periodeKaryawan').addEventListener('change', muatCapaian);
   $('#fileFoto').addEventListener('change', onFotoDipilih);
   pasangSlip();
+  pasangKasbon();
   pasangChat();
 }
 function pesanGalat(err) {
@@ -532,6 +534,138 @@ async function kirimPermintaanRevisi(slip, alasan) {
     periode: slip.periode,
     periodeLabel: (slip.data && slip.data.periodeLabel) || slip.periode,
   });
+}
+
+/* =========================================================================
+   KASBON
+   -------------------------------------------------------------------------
+   Karyawan mengajukan jumlah & memilih sendiri cicilan per bulan lewat
+   klinik/lovepet/kasbonPermintaan (status 'menunggu' sampai diproses
+   pemilik). Akun berjalannya (saldo & cicilan yang sudah disetujui) ada
+   di klinik/lovepet/kasbon/{empId} — dokumen ini HANYA ditulis pemilik
+   (lihat js/kasbon.js & firestore.rules), di sini hanya dibaca.
+   ========================================================================= */
+let kasbonAktif = null;      // dokumen klinik/lovepet/kasbon/{empId}, atau null
+let kasbonRiwayat = [];      // permintaan milik sendiri, terbaru di atas
+let lepasKasbonAktif = null, lepasKasbonRiwayat = null;
+
+function dengarkanKasbon() {
+  if (lepasKasbonAktif) lepasKasbonAktif();
+  lepasKasbonAktif = fsMod.onSnapshot(
+    fsMod.doc(db, 'klinik', KLINIK_ID, 'kasbon', profil.empId),
+    (snap) => { kasbonAktif = snap.exists() ? snap.data() : null; renderKasbon(); },
+    (e) => console.warn('Kasbon aktif:', e),
+  );
+
+  if (lepasKasbonRiwayat) lepasKasbonRiwayat();
+  const kueri = fsMod.query(
+    fsMod.collection(db, 'klinik', KLINIK_ID, 'kasbonPermintaan'),
+    fsMod.where('authUid', '==', profil.authUid),
+  );
+  lepasKasbonRiwayat = fsMod.onSnapshot(kueri, (snap) => {
+    kasbonRiwayat = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()))
+      .sort((a, b) => (b.diajukanMs || 0) - (a.diajukanMs || 0));
+    renderKasbon();
+  }, (e) => {
+    console.warn('Kasbon riwayat:', e);
+    $('#kasbonRiwayat').innerHTML = '<div class="empty">Gagal memuat riwayat pengajuan.</div>';
+  });
+}
+
+function renderKasbon() {
+  const kartu = $('#kasbonAktifCard');
+  if (kasbonAktif && kasbonAktif.status === 'aktif' && kasbonAktif.saldo > 0) {
+    kartu.hidden = false;
+    const saldo = Number(kasbonAktif.saldo) || 0;
+    const cicilan = Number(kasbonAktif.cicilanPerBulan) || 0;
+    const totalAwal = Math.max(saldo, cicilan, 1);
+    const persenLunas = Math.max(0, Math.min(100, Math.round((1 - saldo / totalAwal) * 100)));
+    const sisaBulan = bulanLagiKasbon(saldo, cicilan);
+    $('#kasbonAktifIsi').innerHTML = `
+      <div class="kasbon-aktif">
+        <div class="kasbon-baris"><span>Sisa kasbon</span><b>${rp(saldo)}</b></div>
+        <div class="kasbon-baris"><span>Potongan per bulan</span><b>${rp(cicilan)}</b></div>
+        <div class="kasbon-progress"><span style="width:${persenLunas}%"></span></div>
+        <div class="kasbon-baris"><span class="muted">${sisaBulan === Infinity ? 'Cicilan belum diatur' : `≈ ${sisaBulan} bulan lagi selesai`}</span></div>
+      </div>`;
+  } else {
+    kartu.hidden = true;
+  }
+
+  $('#kasbonRiwayat').innerHTML = kasbonRiwayat.length ? kasbonRiwayat.map((p) => `
+    <div class="riwayat-row">
+      <div class="info">
+        <b>${rp(p.jumlah)} <span class="kasbon-status ${esc(p.status)}">${labelStatusKasbon(p.status)}</span></b>
+        <small>Diajukan ${formatTanggal((p.diajukanIso || '')) || ''} · cicilan ${rp(p.cicilanPerBulan)}/bln</small>
+      </div>
+    </div>`).join('') : '<div class="empty">Belum pernah mengajukan kasbon.</div>';
+}
+
+function labelStatusKasbon(s) {
+  if (s === 'disetujui') return 'Disetujui';
+  if (s === 'ditolak') return 'Ditolak';
+  return 'Menunggu';
+}
+
+function pasangKasbon() {
+  const jumlahEl = $('#kasbonJumlah'), cicilanEl = $('#kasbonCicilan');
+  const perbaruiEstimasi = () => {
+    const j = Number(jumlahEl.value) || 0, c = Number(cicilanEl.value) || 0;
+    const el = $('#kasbonEstimasi');
+    if (!j || !c) { el.textContent = ''; return; }
+    el.textContent = `≈ ${bulanLagiKasbon(j, c)} bulan cicilan, ${rp(c)}/bulan.`;
+  };
+  jumlahEl.addEventListener('input', perbaruiEstimasi);
+  cicilanEl.addEventListener('input', perbaruiEstimasi);
+
+  $('#kasbonForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const jumlah = Number(jumlahEl.value) || 0;
+    const cicilanPerBulan = Number(cicilanEl.value) || 0;
+    const alasan = $('#kasbonAlasan').value.trim();
+    if (jumlah <= 0 || cicilanPerBulan <= 0) { toast('Isi jumlah & potongan per bulan dulu'); return; }
+    if (cicilanPerBulan > jumlah) { toast('Potongan per bulan tidak boleh lebih besar dari jumlah diajukan'); return; }
+    if (!confirm(`Ajukan kasbon ${rp(jumlah)} dengan potongan ${rp(cicilanPerBulan)}/bulan?`)) return;
+
+    const tombol = $('#kasbonKirim');
+    tombol.disabled = true; tombol.textContent = 'Mengirim…';
+    try {
+      const now = Date.now();
+      await fsMod.addDoc(fsMod.collection(db, 'klinik', KLINIK_ID, 'kasbonPermintaan'), {
+        empId: profil.empId, authUid: profil.authUid, nama: profil.nama,
+        jumlah, cicilanPerBulan, alasan: alasan.slice(0, 500),
+        status: 'menunggu', diajukanMs: now, diajukanIso: tanggalISO(),
+      });
+      jumlahEl.value = ''; cicilanEl.value = ''; $('#kasbonAlasan').value = '';
+      $('#kasbonEstimasi').textContent = '';
+      toast('Pengajuan terkirim — menunggu persetujuan manager');
+      beriTahuPemilikKasbon(jumlah, cicilanPerBulan, alasan); // tidak ditunggu
+    } catch (err) {
+      console.error(err);
+      toast('Gagal mengirim: ' + (err.message || err));
+    } finally {
+      tombol.disabled = false; tombol.textContent = 'Kirim pengajuan';
+    }
+  });
+}
+
+/* Sama seperti beriTahuPemilik() di bagian Chat — kalau endpoint Telegram
+   belum dipasang atau gagal, diabaikan diam-diam karena pengajuannya
+   sendiri sudah tersimpan aman di Firestore. */
+async function beriTahuPemilikKasbon(jumlah, cicilanPerBulan, alasan) {
+  try {
+    const idToken = await auth.currentUser.getIdToken();
+    await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        idToken, nama: profil.nama,
+        teks: alasan || '(tanpa catatan)',
+        tipe: 'kasbon',
+        jumlahLabel: `${rp(jumlah)} · cicilan ${rp(cicilanPerBulan)}/bulan`,
+      }),
+    });
+  } catch (e) { console.warn('Notifikasi Telegram (kasbon) dilewati:', e); }
 }
 
 /* =========================================================================

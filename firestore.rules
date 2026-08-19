@@ -113,6 +113,30 @@ service cloud.firestore {
       }
     }
 
+    // Akun kasbon berjalan — satu dokumen per karyawan, id = empId (pola
+    // sama dengan ruang chat). Saldo & cicilan HANYA diubah pemilik lewat
+    // proses persetujuan; karyawan hanya membaca punyanya sendiri.
+    match /klinik/{klinikId}/kasbon/{empId} {
+      allow read: if isPemilik() ||
+        (request.auth != null && authUidKaryawan(klinikId, empId) == request.auth.uid);
+      allow write: if isPemilik();
+    }
+
+    // Pengajuan kasbon dari karyawan. Karyawan hanya boleh membuat pengajuan
+    // baru atas namanya sendiri, berstatus 'menunggu' — menyetujui, menolak,
+    // atau mengubah status lainnya hanya boleh pemilik.
+    match /klinik/{klinikId}/kasbonPermintaan/{permintaanId} {
+      allow read: if isPemilik() ||
+        (request.auth != null && resource.data.authUid == request.auth.uid);
+
+      allow create: if request.auth != null &&
+        request.resource.data.authUid == request.auth.uid &&
+        request.resource.data.authUid == authUidKaryawan(klinikId, request.resource.data.empId) &&
+        request.resource.data.status == 'menunggu';
+
+      allow update, delete: if isPemilik();
+    }
+
     // Catatan pengeluaran (foto nota yang dibaca AI).
     // Hanya pemilik — karyawan tidak pernah menyentuh koleksi ini.
     // Bot Telegram menulis lewat REST API memakai akun pemilik yang sama,

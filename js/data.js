@@ -34,7 +34,7 @@ const DEFAULT_CABANG = { mdo: 'Manado', tmh: 'Tomohon' };
      satuan : nama satuan yang dihitung
      peran  : batasi ke posisi tertentu (kosong = semua posisi)
      laporSendiri : true bila karyawan boleh melaporkan sendiri lewat
-                    halaman "Performance Bonus" (lapor.html) — sekali
+                    halaman "Lovepet Crew" (lapor.html) — sekali
                     per hari, dengan foto bukti.                        */
 const KOMPONEN = [
   { id: 'clients', label: 'Clients',     slip: 'Bonus Clients',     satuan: 'client'  },
@@ -261,6 +261,17 @@ function seedPayroll() {
                       rawat: c(0, 0, 10000), styling: c(0, 0, 25000) }),
     ],
   };
+}
+
+/* ---------- Kasbon: estimasi sisa lama cicilan ----------
+   Dipakai di js/kasbon.js (pemilik) & js/lapor.js (karyawan) supaya
+   angkanya selalu dihitung dengan cara yang sama di kedua sisi. */
+function bulanLagiKasbon(saldo, cicilanPerBulan) {
+  const s = Number(saldo) || 0;
+  const c = Number(cicilanPerBulan) || 0;
+  if (s <= 0) return 0;
+  if (c <= 0) return Infinity;
+  return Math.ceil(s / c);
 }
 
 /* ---------- Util format ---------- */

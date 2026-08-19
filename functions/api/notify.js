@@ -42,11 +42,19 @@ export async function onRequestPost({ request, env }) {
   if (!email.endsWith('@' + DOMAIN_KARYAWAN)) return jawab(403, 'Bukan akun karyawan');
 
   const nama = potong(isi.nama || email.split('@')[0], 60);
-  const judul = isi.tipe === 'revisi'
-    ? `📄 <b>${lolos(nama)}</b> minta revisi slip ${lolos(potong(isi.periodeLabel || '', 30))}`
-    : `💬 Pesan baru dari <b>${lolos(nama)}</b>`;
+  let judul, penutup;
+  if (isi.tipe === 'revisi') {
+    judul = `📄 <b>${lolos(nama)}</b> minta revisi slip ${lolos(potong(isi.periodeLabel || '', 30))}`;
+    penutup = 'Balas lewat tab Chat di aplikasi gaji.';
+  } else if (isi.tipe === 'kasbon') {
+    judul = `💰 <b>${lolos(nama)}</b> mengajukan kasbon${isi.jumlahLabel ? ' — ' + lolos(potong(isi.jumlahLabel, 60)) : ''}`;
+    penutup = 'Buka tab Kasbon di aplikasi gaji untuk menyetujui.';
+  } else {
+    judul = `💬 Pesan baru dari <b>${lolos(nama)}</b>`;
+    penutup = 'Balas lewat tab Chat di aplikasi gaji.';
+  }
 
-  const pesan = `${judul}\n\n${lolos(potong(teks, 900))}\n\n<i>Balas lewat tab Chat di aplikasi gaji.</i>`;
+  const pesan = `${judul}\n\n${lolos(potong(teks, 900))}\n\n<i>${penutup}</i>`;
 
   try { await kirimSemua(env, pesan); }
   catch (e) {
