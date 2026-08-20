@@ -779,6 +779,11 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 .ot-teks { flex: 1; min-width: 220px; }
 .ot-teks b { font-size: .92rem; }
 .ot-teks p { margin: 3px 0 0; font-size: .8rem; color: var(--text-secondary); }
+.posisi-list { display: flex; flex-direction: column; gap: 8px; }
+.posisi-row { display: flex; align-items: center; gap: 10px; }
+.posisi-row input[type="text"] { flex: 1; min-width: 0; }
+.posisi-row .posisi-pakai { flex: none; font-size: .76rem; white-space: nowrap; }
+
 .kasbon-progress {
   height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden;
 }

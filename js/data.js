@@ -32,7 +32,11 @@ const DEFAULT_CABANG = { mdo: 'Manado', tmh: 'Tomohon' };
      label  : nama pendek (halaman input & pengaturan)
      slip   : nama di slip gaji
      satuan : nama satuan yang dihitung
-     peran  : batasi ke posisi tertentu (kosong = semua posisi)
+     peran  : batasi ke posisi tertentu (kosong = semua posisi). Ditulis
+              dengan NAMA posisi apa adanya — kalau posisi itu diganti
+              namanya lewat Kelola → Pengaturan → Posisi Karyawan, baris
+              ini perlu disunting manual di sini juga (tidak ikut berubah
+              otomatis, karena KOMPONEN bukan bagian dari data tersimpan).
      laporSendiri : true bila karyawan boleh melaporkan sendiri lewat
                     halaman "Lovepet Crew" (lapor.html) — sekali
                     per hari, dengan foto bukti.                        */
@@ -60,7 +64,11 @@ const DEFAULT_TARIF = {
   Helper:  { clients: 10000, jaga: 30000,  lembur: 50000,  rawat: 10000, styling: 25000, operasi: 0,     makan: 450000 },
 };
 
-const ROLES = ['Manager', 'Dokter', 'Admin', 'Groomer', 'Helper'];
+/* Daftar awal — bisa ditambah/diubah/dihapus lewat Kelola → Pengaturan →
+   Posisi Karyawan (disimpan di state.roles, lihat js/app.js). Konstanta
+   ini hanya dipakai sebagai isian pertama kali & sebagai jaring pengaman
+   kalau ada baris gaji dengan posisi yang tidak dikenali. */
+const DEFAULT_ROLES = ['Manager', 'Dokter', 'Admin', 'Groomer', 'Helper'];
 
 /* ---------- Master karyawan (nama & angka sesuai file Juli 2026) ----------
    cabang           : cabang "rumah" karyawan (mdo/tmh) — jadi pilihan awal

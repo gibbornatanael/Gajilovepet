@@ -26,6 +26,7 @@ function stateBaru() {
     version: APP.version,
     profil: Object.assign({}, DEFAULT_PROFIL),
     cabang: Object.assign({}, DEFAULT_CABANG),
+    roles: DEFAULT_ROLES.slice(),
     tarif: JSON.parse(JSON.stringify(DEFAULT_TARIF)),
     karyawan: JSON.parse(JSON.stringify(SEED_KARYAWAN)),
     payroll: seedPayroll(),
@@ -60,6 +61,7 @@ function muat() {
     if (!s || !s.payroll) return stateBaru();
     s.profil = Object.assign({}, DEFAULT_PROFIL, s.profil || {});
     s.cabang = Object.assign({}, DEFAULT_CABANG, s.cabang || {});
+    s.roles = (s.roles && s.roles.length) ? s.roles : DEFAULT_ROLES.slice();
     // v2: posisi Manager (Natanael Montolalu) tidak lagi ikut penggajian
     if (!(s.version >= 2)) {
       s.karyawan = (s.karyawan || []).filter((e) => e.id !== 'nat');
@@ -108,6 +110,7 @@ window.LovePet = {
     state = baru;
     state.profil = Object.assign({}, DEFAULT_PROFIL, state.profil || {});
     state.cabang = Object.assign({}, DEFAULT_CABANG, state.cabang || {});
+    state.roles = (state.roles && state.roles.length) ? state.roles : DEFAULT_ROLES.slice();
     state.tarif = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT_TARIF)), state.tarif || {});
     gudang.setItem(APP.storageKey, JSON.stringify(state));
     if (!state.payroll[periode]) periode = periodeTerakhir();
@@ -1148,7 +1151,7 @@ function renderKaryawan() {
           <input type="text" data-k="${i}" data-f="nama" value="${esc(e.nama)}"></label>
         <div class="f-row">
           <label class="field"><span class="f-label">Posisi</span>
-            <select data-k="${i}" data-f="role">${ROLES.map((r) => `<option${r === e.role ? ' selected' : ''}>${r}</option>`).join('')}</select></label>
+            <select data-k="${i}" data-f="role">${state.roles.map((r) => `<option${r === e.role ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
           <label class="field"><span class="f-label">Status</span>
             <select data-k="${i}" data-f="aktif">
               <option value="1"${e.aktif !== false ? ' selected' : ''}>Aktif</option>
@@ -1278,7 +1281,7 @@ $('#btnTambahKaryawan').addEventListener('click', () => {
   const nama = prompt('Nama lengkap karyawan baru:');
   if (!nama) return;
   const id = nama.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 18) + '-' + Math.random().toString(36).slice(2, 5);
-  state.karyawan.push({ id, nama: nama.trim(), role: 'Groomer', pokok: 0, operasional: 0, makan: 0, aktif: true, mulai: '', bank: '', norek: '', cabang: CABANG[0], username: '', authUid: '' });
+  state.karyawan.push({ id, nama: nama.trim(), role: state.roles[0] || 'Karyawan', pokok: 0, operasional: 0, makan: 0, aktif: true, mulai: '', bank: '', norek: '', cabang: CABANG[0], username: '', authUid: '' });
   simpan(true); renderKaryawan(); toast('Karyawan ditambahkan — lengkapi datanya');
 });
 
@@ -1382,6 +1385,15 @@ function renderPengaturan() {
     `<label class="field"><span class="f-label">Cabang ${i + 1}</span>
       <input type="text" data-cab="${c}" value="${esc(state.cabang[c] || '')}"></label>`).join('')}</div>`;
 
+  $('#posisiList').innerHTML = state.roles.map((r, i) => {
+    const dipakai = state.karyawan.filter((e) => e.role === r).length;
+    return `<div class="posisi-row" data-i="${i}">
+      <input type="text" data-posisi="${i}" value="${esc(r)}">
+      <span class="muted posisi-pakai">${dipakai ? `${dipakai} karyawan` : 'tidak dipakai'}</span>
+      <button type="button" class="btn btn-sm btn-danger" data-hapus-posisi="${i}" ${dipakai ? 'disabled title="Pindahkan dulu karyawan yang masih berposisi ini"' : ''}>Hapus</button>
+    </div>`;
+  }).join('');
+
   const cloudAktif = window.CLOUD && window.CLOUD.aktif;
   $('#akunKet').textContent = cloudAktif
     ? 'Data tersinkron otomatis ke semua perangkat yang memakai akun yang sama. Tetap bisa dipakai saat offline — perubahan menyusul saat online lagi.'
@@ -1391,7 +1403,7 @@ function renderPengaturan() {
   const kol = KOMPONEN.map((k) => [k.id, k.label]).concat([['makan', 'Tunj. makan']]);
   $('#tblTarif').innerHTML = `
     <thead><tr><th>Posisi</th>${kol.map((c) => `<th>${c[1]}</th>`).join('')}</tr></thead>
-    <tbody>${ROLES.map((r) => `<tr><td>${r}</td>${kol.map((c) =>
+    <tbody>${state.roles.map((r) => `<tr><td>${esc(r)}</td>${kol.map((c) =>
       `<td><input type="number" step="500" style="width:96px" data-tarif="${r}" data-tk="${c[0]}" value="${(state.tarif[r] || {})[c[0]] || 0}"></td>`).join('')}</tr>`).join('')}</tbody>`;
 }
 
@@ -1405,6 +1417,52 @@ $('#formCabang').addEventListener('input', (e) => {
   if (!e.target.dataset.cab) return;
   state.cabang[e.target.dataset.cab] = e.target.value;
   simpan(true);
+});
+
+/* Posisi Karyawan ------------------------------------------------------
+   Rename ditangani saat kolom kehilangan fokus (bukan tiap ketikan) —
+   supaya baris tarif & pilihan posisi di form karyawan tidak dirender
+   ulang di tengah mengetik. Perubahan lalu dirambatkan ke karyawan &
+   baris gaji yang sudah ada, persis seperti mengubah posisi satu
+   karyawan (lihat listener #karyawanList di atas). */
+$('#posisiList').addEventListener('change', (e) => {
+  const el = e.target;
+  if (!el.dataset.posisi) return;
+  const i = Number(el.dataset.posisi);
+  const lama = state.roles[i];
+  const baru = el.value.trim();
+  if (!baru) { el.value = lama; return; }
+  if (baru === lama) return;
+  if (state.roles.some((r, j) => j !== i && r === baru)) {
+    toast('Posisi ini sudah ada'); el.value = lama; return;
+  }
+
+  state.roles[i] = baru;
+  if (state.tarif[lama] && !state.tarif[baru]) state.tarif[baru] = state.tarif[lama];
+  delete state.tarif[lama];
+  state.karyawan.forEach((k) => { if (k.role === lama) k.role = baru; });
+  Object.values(state.payroll).forEach((list) => list.forEach((r) => { if (r.role === lama) r.role = baru; }));
+
+  simpan(true); renderKaryawan(); renderPengaturan(); sinkronRosterKaryawan();
+  toast(`Posisi "${lama}" diganti jadi "${baru}"`);
+});
+$('#posisiList').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-hapus-posisi]');
+  if (!b || b.disabled) return;
+  const i = Number(b.dataset.hapusPosisi);
+  const nama = state.roles[i];
+  if (!confirm(`Hapus posisi "${nama}"?`)) return;
+  state.roles.splice(i, 1);
+  delete state.tarif[nama];
+  simpan(true); renderPengaturan(); toast('Posisi dihapus');
+});
+$('#btnTambahPosisi').addEventListener('click', () => {
+  const nama = prompt('Nama posisi baru:');
+  if (!nama || !nama.trim()) return;
+  const bersih = nama.trim();
+  if (state.roles.includes(bersih)) { toast('Posisi ini sudah ada'); return; }
+  state.roles.push(bersih);
+  simpan(true); renderPengaturan(); toast(`Posisi "${bersih}" ditambahkan`);
 });
 $('#tblTarif').addEventListener('input', (e) => {
   const el = e.target;
@@ -1428,6 +1486,7 @@ $('#fileRestore').addEventListener('change', (e) => {
       if (!s.payroll || !s.karyawan) throw new Error('format');
       if (!confirm('Ganti semua data saat ini dengan isi file cadangan?')) return;
       state = s; state.profil = Object.assign({}, DEFAULT_PROFIL, s.profil || {});
+      state.roles = (s.roles && s.roles.length) ? s.roles : DEFAULT_ROLES.slice();
       periode = periodeTerakhir();
       simpan(true); render(); toast('Data dipulihkan');
     } catch { alert('File tidak dikenali sebagai cadangan aplikasi ini.'); }
