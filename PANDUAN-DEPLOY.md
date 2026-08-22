@@ -162,6 +162,22 @@ memakai Firestore yang sama. Yang perlu diperhatikan hanya dua hal:
    kirim** di tab Slip Gaji akan menolak kalau karyawannya belum punya akun,
    dan mengatakan begitu.
 
+### B9. Laporan Neraca (menu Neraca)
+
+Neracanya ditarik Worker dari intajo.com dan disimpan di koleksi
+`neracaIntajo`. **Pasang ulang `firestore.rules` (langkah B4)** kalau Anda
+memasangnya sebelum menu ini ada — Worker menulis memakai service account
+sehingga tidak terhalang aturan, tapi browser akan ditolak saat membaca dan
+halamannya cuma berkata *"Gagal memuat neraca"* walau datanya sudah ada.
+
+> ⚠️ **`firestore.rules` tidak ikut ter-deploy oleh `git push`.** Berkas di
+> repo ini hanya salinan acuan; yang berlaku adalah yang dipasang di tab
+> **Rules** Firebase Console. Tiap kali ada koleksi baru, salin ulang.
+
+Isi neracanya sendiri baru terisi untuk tanggal yang pembukuannya sudah
+diproses di intajo (**Accounting → Accounting Process**). Untuk tanggal
+berjalan biasanya masih kosong — itu wajar, bukan kerusakan.
+
 Cara memakainya sehari-hari ada di README bagian *"Karyawan mengambil slip
 gajinya sendiri"*.
 

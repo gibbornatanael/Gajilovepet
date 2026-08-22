@@ -25,6 +25,10 @@ import {
   onRequestPostTarik as neracaTarikHandler,
   sinkronNeracaHariIni,
 } from './functions/api/intajo-neraca.js';
+import {
+  onRequestPostStatus as prosesStatusHandler,
+  onRequestPostJalankan as prosesJalankanHandler,
+} from './functions/api/intajo-proses.js';
 import { onRequestPost as mokaCatatHandler, catatKeMokaKalauWaktunya } from './functions/api/moka-catat.js';
 
 export default {
@@ -59,6 +63,16 @@ export default {
     if (url.pathname === '/api/neraca-tarik') {
       return request.method === 'POST'
         ? neracaTarikHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
+    if (url.pathname === '/api/proses-status') {
+      return request.method === 'POST'
+        ? prosesStatusHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
+    if (url.pathname === '/api/proses-jalankan') {
+      return request.method === 'POST'
+        ? prosesJalankanHandler({ request, env })
         : new Response('Gunakan POST', { status: 405 });
     }
     if (url.pathname === '/api/moka-catat') {

@@ -58,6 +58,7 @@ function mulai() {
   q('#neracaTanggal')?.addEventListener('change', segarkan);
   q('#btnTarikNeraca')?.addEventListener('click', (e) => tarikSekarang(e.currentTarget));
   segarkan();
+  muatStatusProses();
 }
 
 /* Tanggal yang ditampilkan pertama kali BUKAN hari ini, melainkan neraca
@@ -179,6 +180,118 @@ async function tarikSekarang(tombol) {
   } finally {
     tombol.disabled = false;
     setTimeout(() => { tombol.textContent = semula; }, 3000);
+  }
+}
+
+/* ==================== TUTUP BUKU (Accounting Process) ====================
+   Satu-satunya bagian aplikasi ini yang MENULIS ke intajo.com. Tidak bisa
+   dibatalkan dari sini (intajo punya menu terpisah "Accounting Back Date"),
+   jadi alurnya sengaja dibuat berlapis: keadaan sebenarnya ditampilkan
+   dulu, berapa hari yang akan tertutup dihitung dan disebutkan, lalu
+   pemilik harus MENGETIK ULANG tanggal tujuannya sebagai persetujuan.
+   Tombol yang cuma perlu "OK" terlalu mudah tertekan tanpa dibaca. */
+
+let prosesStatus = null;
+
+async function muatStatusProses() {
+  const wadah = q('#prosesIsi');
+  const auth = window.CLOUD && window.CLOUD.auth;
+  if (!wadah || !auth || !auth.currentUser) return;
+
+  wadah.innerHTML = '<p class="muted">Memuat keadaan pembukuan…</p>';
+  try {
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch('/api/proses-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.ok) throw new Error(j.error || 'Gagal (' + res.status + ')');
+    prosesStatus = j;
+    gambarProses();
+  } catch (e) {
+    console.error('proses-status:', e);
+    wadah.innerHTML = `<p class="muted">Tidak bisa membaca keadaan pembukuan intajo: ${esc(e.message)}</p>`;
+  }
+}
+
+function gambarProses() {
+  const s = prosesStatus;
+  const hariTertinggal = Math.max(0, selisihHari(s.tanggalSekarang, tanggalWita(0)));
+
+  q('#prosesIsi').innerHTML = `
+    <div class="cabang-row" style="grid-template-columns:repeat(2,1fr)">
+      <div class="stat"><div class="k">Buku intajo sekarang</div><div class="v">${tanggalPanjang(s.tanggalSekarang)}</div></div>
+      <div class="stat ${hariTertinggal > 0 ? 'untung-minus' : 'untung-plus'}">
+        <div class="k">Tertinggal</div><div class="v">${hariTertinggal} hari</div></div>
+    </div>
+    <p class="muted" style="margin-top:10px">
+      Status tutup buku per cabang:
+      ${s.cabang.map((c) => `${esc(c.nama)} — ${c.tertutup ? 'sudah' : 'belum'}`).join(' · ')}
+    </p>
+    <div class="toolbar" style="margin-top:12px">
+      <label class="period-picker">
+        <span class="sr-only">Proses sampai tanggal</span>
+        <input type="date" id="prosesSampai" min="${esc(s.tanggalMinimal)}" value="${esc(s.tanggalMinimal)}">
+      </label>
+      <button class="btn" id="btnProses" type="button">Proses sampai tanggal ini</button>
+    </div>
+    <p class="proses-awas">
+      ⚠ Tutup buku menulis ke pembukuan intajo dan <b>tidak bisa dibatalkan dari aplikasi ini</b>
+      (memundurkannya harus lewat menu Accounting Back Date di intajo). Berlaku untuk kedua cabang
+      sekaligus, maksimal ${s.maksHariSekali} hari sekali proses.
+    </p>`;
+
+  q('#btnProses').addEventListener('click', (e) => jalankanProses(e.currentTarget));
+}
+
+const selisihHari = (dari, sampai) =>
+  Math.round((Date.parse(sampai + 'T00:00:00Z') - Date.parse(dari + 'T00:00:00Z')) / 86400000);
+
+async function jalankanProses(tombol) {
+  const s = prosesStatus;
+  const sampai = q('#prosesSampai')?.value;
+  if (!s || !sampai) return;
+
+  if (sampai < s.tanggalMinimal) {
+    return alert(`Tutup buku tidak bisa mundur. Paling cepat ke ${tanggalPanjang(s.tanggalMinimal)}.`);
+  }
+  const hari = selisihHari(s.tanggalSekarang, sampai);
+  if (hari > s.maksHariSekali) {
+    return alert(`Itu ${hari} hari sekaligus — dibatasi maksimal ${s.maksHariSekali} hari sekali proses.`);
+  }
+
+  // Persetujuan: ketik ulang tanggalnya. Bukan sekadar OK/Batal.
+  const jawab = prompt(
+    `Akan menutup pembukuan ${hari} hari:\n` +
+    `  dari ${tanggalPanjang(s.tanggalSekarang)}\n` +
+    `  sampai ${tanggalPanjang(sampai)}\n` +
+    `untuk KEDUA cabang. Tidak bisa dibatalkan dari aplikasi ini.\n\n` +
+    `Kalau yakin, ketik ulang tanggal tujuannya (${sampai}):`);
+  if (jawab === null) return;
+  if (jawab.trim() !== sampai) return alert('Tanggal yang diketik tidak sama — dibatalkan, tidak ada yang diproses.');
+
+  const semula = tombol.textContent;
+  tombol.disabled = true;
+  tombol.textContent = 'Memproses…';
+  try {
+    const idToken = await window.CLOUD.auth.currentUser.getIdToken();
+    const res = await fetch('/api/proses-jalankan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken, tanggal: sampai, tanggalSekarangDilihat: s.tanggalSekarang }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.ok) throw new Error(j.error || 'Gagal (' + res.status + ')');
+    alert(`Berhasil. Buku intajo sekarang di ${tanggalPanjang(j.sampai)} (${j.hari} hari diproses).`);
+    await muatStatusProses();
+  } catch (e) {
+    console.error('proses-jalankan:', e);
+    alert('Gagal menutup buku: ' + e.message);
+  } finally {
+    tombol.disabled = false;
+    tombol.textContent = semula;
   }
 }
 

@@ -346,6 +346,13 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 .neraca-tbl .neraca-induk td { font-weight: 700; }
 .neraca-tbl .neraca-minus { color: var(--danger); }
 .neraca-timpang { color: var(--danger); font-size: .78rem; font-weight: 600; margin: 10px 0 0; }
+/* Peringatan tutup buku — satu-satunya tindakan yang menulis ke intajo. */
+.proses-awas {
+  margin: 12px 0 0; padding: 10px 12px; border-radius: 10px;
+  font-size: .78rem; line-height: 1.5; color: var(--text-secondary);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--danger) 26%, var(--border));
+}
 
 /* ========================= DAFTAR (HP) ========================= */
 .list { margin: -4px -4px 0; }
