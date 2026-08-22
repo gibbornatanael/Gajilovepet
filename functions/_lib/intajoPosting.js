@@ -128,15 +128,29 @@ export async function jalankanAksiPosting(email, password, kunciCabang, aksi) {
     current_date: sebelum.currentDate,
     submit: aksi,
   });
+  /* redirect: 'manual' — WAJIB, sama seperti login() di intajoScraper.js.
+     intajo merotasi cookie sesi persis di respons 302 sesudah POST ini;
+     default fetch (redirect: 'follow') mengikuti redirect itu otomatis
+     dan cuma menyisakan header dari halaman TUJUAN akhir, bukan dari 302-
+     nya — jadi Set-Cookie yang baru itu lewat begitu saja tanpa kepungut.
+     Cookie lama yang lolos ke bacaStatusPosting sesudahnya kadang masih
+     jalan (baca statusnya sendiri belum tentu langsung salah), tapi ini
+     yang tadi bikin "sesudah" gagal parse dengan pesan
+     "Formulir Posting tak dikenali" padahal aksinya sendiri sukses. */
   const res = await fetch(URL_POSTING, {
     method: 'POST',
+    redirect: 'manual',
     headers: { Cookie: cookie, 'Content-Type': 'application/x-www-form-urlencoded', Referer: URL_POSTING },
     body: badan.toString(),
   });
-  if (!res.ok && res.status !== 302) throw new Error('intajo menolak ' + aksi + ' (' + res.status + ')');
-  await res.text();
+  if (!res.ok && res.status !== 302 && res.status !== 0) throw new Error('intajo menolak ' + aksi + ' (' + res.status + ')');
   cookie = ambilSessionCookie(res) || cookie;
 
+  // Jeda satu halaman sebelum status final dibaca — pola sama dengan
+  // muatUlangHalamanPosting sesudah ganti cabang (lihat catatan di kepala
+  // berkas): perubahan dari POST ini juga baru "settle" pada permintaan
+  // BERIKUTNYA, bukan langsung di respons POST itu sendiri.
+  cookie = await muatUlangHalamanPosting(cookie);
   const sesudah = await bacaStatusPosting(cookie);
   if (sesudah.aksiTersedia === sebelum.aksiTersedia) {
     throw new Error(`${aksi} untuk ${cabang.nama} tidak berjalan — status tidak berubah. Cek langsung di intajo.com.`);

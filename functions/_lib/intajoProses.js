@@ -23,6 +23,8 @@
    jadi tidak perlu ganti cabang seperti di intajoNeraca.js.
    ========================================================================= */
 
+import { ambilSessionCookie } from './intajoScraper.js';
+
 const BASE = 'https://intajo.com';
 const URL_PROSES = `${BASE}/finaccounting/process`;
 
@@ -70,6 +72,15 @@ export async function bacaStatusProses(cookie) {
   };
 }
 
+/* Sama seperti muatUlangHalamanPosting() di intajoPosting.js — jeda satu
+   GET sebelum status BENAR-BENAR baru dianggap final. */
+async function muatUlangHalamanProses(cookie) {
+  const res = await fetch(URL_PROSES, { headers: { Cookie: cookie, Accept: 'text/html' } });
+  if (!res.ok) throw new Error('Gagal memuat ulang halaman Accounting Process (' + res.status + ')');
+  await res.text();
+  return ambilSessionCookie(res) || cookie;
+}
+
 const tambahHari = (t, n) => {
   const d = new Date(t + 'T00:00:00Z');
   d.setUTCDate(d.getUTCDate() + n);
@@ -110,8 +121,16 @@ export async function jalankanProses(cookie, sampaiTanggal) {
     submit: 'Process',
   });
 
+  /* redirect: 'manual' + jeda satu halaman sebelum baca ulang status —
+     WAJIB, ditemukan lewat percobaan sungguhan (bukan dugaan): tanpa ini,
+     Sign Off di intajoPosting.js sempat melaporkan gagal padahal aksinya
+     sendiri sukses, karena (a) fetch default mengikuti redirect 302
+     otomatis dan cookie sesi baru yang terbit persis di 302 itu jadi
+     tidak kepungut, dan (b) perubahannya baru "settle" pada permintaan
+     BERIKUTNYA, bukan langsung terlihat di respons POST itu sendiri. */
   const res = await fetch(URL_PROSES, {
     method: 'POST',
+    redirect: 'manual',
     headers: {
       Cookie: cookie,
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -119,9 +138,10 @@ export async function jalankanProses(cookie, sampaiTanggal) {
     },
     body: badan.toString(),
   });
-  if (!res.ok && res.status !== 302) throw new Error('intajo menolak proses (' + res.status + ')');
-  await res.text();
+  if (!res.ok && res.status !== 302 && res.status !== 0) throw new Error('intajo menolak proses (' + res.status + ')');
+  cookie = ambilSessionCookie(res) || cookie;
 
+  cookie = await muatUlangHalamanProses(cookie);
   const sesudah = await bacaStatusProses(cookie);
   if (sesudah.tanggalSekarang === sebelum.tanggalSekarang) {
     throw new Error(
