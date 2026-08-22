@@ -328,40 +328,80 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 }
 .stat.untung-minus .v { color: var(--danger); }
 
-/* ---- Laporan neraca: Manado | Tomohon | Gabungan berdampingan ----
-   Di HP ketiganya menumpuk ke bawah (kolom neraca terlalu sempit kalau
-   dipaksa sejajar di layar kecil); mulai layar lebar baru sejajar tiga.
+/* ---- Laporan neraca: SATU tabel, Manado | Tomohon | Gabungan sejajar ----
+   Nama akun cuma ditulis sekali di kolom paling kiri (dipakai bersama
+   ketiga cabang — bagan akunnya sama), lalu tiga kolom angka sejajar di
+   sebelahnya supaya bisa langsung dibandingkan tanpa bolak-balik kartu.
    Dibuat compact dengan sengaja: laporan ini isinya puluhan baris akun,
    jadi tiap piksel padding dikalikan banyak — baris rapat & huruf kecil
    di sini justru LEBIH gampang dibaca (semua akun kelihatan tanpa
-   scroll), bukan sebaliknya. */
-.neraca-kolom { display: grid; gap: 14px; grid-template-columns: 1fr; align-items: start; }
-@media (min-width: 900px)  { .neraca-kolom { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 1180px) { .neraca-kolom { grid-template-columns: repeat(3, 1fr); } }
-.neraca-kartu { min-width: 0; padding: 14px; }
-.neraca-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-.neraca-head h2 { margin: 0; }
-.neraca-catatan { font-size: .72rem; margin: 0 0 10px; }
-.neraca-sisi { margin-top: 14px; }
-.neraca-sisi:first-of-type { margin-top: 4px; }
-.neraca-sisi .cabang-judul { margin-bottom: 4px; font-size: .68rem; }
+   scroll berlebihan), bukan sebaliknya. */
+.neraca-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.neraca-head h2 { margin: 0 0 3px; }
+.neraca-head .btn { flex-shrink: 0; }
+.neraca-catatan { font-size: .72rem; margin: 0; }
 
 /* .tbl aslinya punya min-width 520px & padding lega untuk tabel biasa;
    neraca perlu jauh lebih rapat supaya satu layar bisa memuat semua akun. */
-.neraca-tbl { min-width: 0; font-size: .76rem; border-collapse: collapse; }
-.neraca-tbl th, .neraca-tbl td { padding: 3px 6px; white-space: normal; line-height: 1.3; }
-.neraca-tbl td:first-child { position: static; }
-.neraca-tbl thead th { font-size: .62rem; padding-bottom: 4px; }
-.neraca-tbl tbody tr:hover td, .neraca-tbl tbody tr:hover td:first-child { background: transparent; }
-.neraca-tbl .num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.neraca-tbl { min-width: 0; width: 100%; font-size: .8rem; border-collapse: collapse; }
+.neraca-tbl th, .neraca-tbl td { padding: 5px 8px; white-space: nowrap; line-height: 1.35; }
+.neraca-tbl td:first-child, .neraca-tbl th:first-child { white-space: normal; position: static; }
+.neraca-tbl thead th {
+  font-size: .68rem; padding-bottom: 7px; text-align: right;
+  border-bottom: 2px solid var(--border-strong);
+}
+.neraca-tbl thead th:first-child { text-align: left; }
+.neraca-tbl .neraca-kol-gabungan { color: var(--text-primary); background: color-mix(in srgb, var(--brand) 7%, transparent); }
+.neraca-tbl tbody tr:hover td { background: var(--surface-2); }
+.neraca-tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+.neraca-tbl .neraca-nihil { color: var(--text-muted); text-align: center; }
+
+/* Baris judul bagian ("Aset" / "Kewajiban & Modal") — pita penuh supaya
+   jelas beda dari baris akun biasa, sekaligus jadi jangkar visual saat
+   menggulir daftar akun yang panjang. */
+.neraca-tbl .neraca-bagian td {
+  background: var(--surface-2); font-weight: 700; font-size: .72rem;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary);
+  padding: 6px 8px;
+}
 .neraca-tbl .neraca-induk td { font-weight: 700; }
-.neraca-tbl .neraca-induk td:first-child { border-top: 1px solid var(--border); padding-top: 5px; }
+.neraca-tbl .neraca-jumlah td {
+  font-weight: 700; border-top: 1px solid var(--border-strong);
+  border-bottom: 2px solid var(--border-strong);
+}
 .neraca-tbl .neraca-minus { color: var(--danger); }
-.neraca-tbl tfoot td { padding-top: 5px; }
-/* Mode Detail menambah 3 kolom angka — tabelnya perlu ruang, jadi digulir
-   sendiri (.table-scroll) daripada mengempiskan kartu-kartu lain. */
-.neraca-tbl-detail { min-width: 360px; }
 .neraca-timpang { color: var(--danger); font-size: .78rem; font-weight: 600; margin: 10px 0 0; }
+
+/* ---- Popup detail (Begin/Debit/Credit/Total) ----
+   Sama pola dengan .nota-dialog: overlay + kartu tengah, tapi lebih lebar
+   karena isinya 12 kolom angka (3 cabang × 4) dan digulir sendiri. */
+.neraca-dialog {
+  position: fixed; inset: 0; z-index: 60; overflow-y: auto;
+  background: rgba(0,0,0,.5); padding: 18px;
+  display: flex; align-items: flex-start; justify-content: center;
+}
+.neraca-dialog[hidden] { display: none; }
+.neraca-dialog-card {
+  background: var(--surface-1); border-radius: var(--radius);
+  padding: 18px; width: min(1400px, 100%); box-shadow: var(--shadow); margin: auto;
+}
+.neraca-dialog-card .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.neraca-dialog-card .card-head h2 { margin: 0; font-size: 1rem; }
+.neraca-tbl-detail { min-width: 900px; }
+.neraca-tbl-detail thead .neraca-grup-head {
+  text-align: center; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
+  border-bottom: 1px solid var(--border); padding-bottom: 4px;
+}
+.neraca-tbl-detail thead tr:last-child th { border-bottom: 2px solid var(--border-strong); }
+
+/* ---- Sign Off Branch (prasyarat tutup buku) ---- */
+.neraca-signoff-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.neraca-signoff-cabang { display: flex; align-items: center; gap: 8px; }
+.badge.badge-open {
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-1));
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+  color: var(--danger);
+}
 /* Peringatan tutup buku — satu-satunya tindakan yang menulis ke intajo. */
 .proses-awas {
   margin: 12px 0 0; padding: 10px 12px; border-radius: 10px;

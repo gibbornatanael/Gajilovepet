@@ -1,20 +1,29 @@
 /* =========================================================================
    Accounting Process intajo.com dari aplikasi
    -------------------------------------------------------------------------
-   Dua jalur, keduanya khusus pemilik:
-     POST /api/proses-status   — baca keadaan (tanggal buku sekarang, dst).
-                                 Aman, tidak mengubah apa pun.
+   Tiga jalur, semuanya khusus pemilik:
+     POST /api/proses-status   — baca keadaan tanggal buku DAN status Sign
+                                 Off tiap cabang. Aman, tidak mengubah apa pun.
+     POST /api/proses-signoff  — Sign Off / Sign On SATU cabang di halaman
+                                 Posting. Prasyarat wajib sebelum Accounting
+                                 Process bisa jalan (baru ketahuan lewat
+                                 percobaan pertama: intajo menolak proses
+                                 bukan karena jurnal pending, tapi karena
+                                 cabangnya belum di-sign off — lihat
+                                 intajoPosting.js).
      POST /api/proses-jalankan — TUTUP BUKU sampai tanggal yang diminta.
                                  Menulis ke pembukuan sungguhan.
 
-   Sengaja TIDAK ada pemicu cron di sini. Menutup buku adalah keputusan
-   akuntansi, bukan sesuatu yang pantas terjadi diam-diam di latar belakang
-   — apalagi karena tidak bisa dibatalkan dari aplikasi ini (intajo punya
-   menu terpisah "Accounting Back Date" untuk memundurkannya).
-   ========================================================================= */
+   Sengaja TIDAK ada pemicu cron di sini untuk ketiganya. Sign Off mengunci
+   transaksi harian cabang itu (klinik jadi tidak bisa mencatat transaksi
+   baru di intajo sampai di-Sign On lagi), dan tutup buku tidak bisa
+   dibatalkan dari aplikasi ini (intajo punya menu terpisah "Accounting
+   Back Date" untuk memundurkannya) — dua-duanya keputusan operasional,
+   bukan sesuatu yang pantas terjadi diam-diam di latar belakang. */
 import { bacaEnv } from '../_lib/env.js';
 import { login } from '../_lib/intajoScraper.js';
 import { bacaStatusProses, jalankanProses, selisihHari, MAKS_HARI_SEKALI } from '../_lib/intajoProses.js';
+import { bacaStatusPostingSemuaCabang, jalankanAksiPosting } from '../_lib/intajoPosting.js';
 import { bacaDokumen } from '../_lib/firestoreAdmin.js';
 import { uidPemanggil } from './intajo-sync.js';
 
@@ -49,6 +58,11 @@ export async function onRequestPostStatus({ request, env }) {
   try {
     const cookie = await login(env.INTAJO_EMAIL, env.INTAJO_PASSWORD);
     const s = await bacaStatusProses(cookie);
+    // Status Sign Off ditelusuri terpisah (perlu pindah-pindah cabang di
+    // sesinya sendiri) — dilakukan berurutan dengan login di atas, bukan
+    // paralel, supaya tidak ada dua sesi cookie berbeda yang tumpang tindih.
+    const posting = await bacaStatusPostingSemuaCabang(env.INTAJO_EMAIL, env.INTAJO_PASSWORD);
+
     // csrf token milik sesi Worker — tidak ada gunanya di browser, dan
     // tidak perlu ikut keluar dari sini.
     return jawabJson(200, {
@@ -57,9 +71,39 @@ export async function onRequestPostStatus({ request, env }) {
       tanggalMinimal: s.tanggalMinimal,
       cabang: s.cabang,
       maksHariSekali: MAKS_HARI_SEKALI,
+      posting: Object.fromEntries(Object.entries(posting).map(([k, v]) => [
+        k, { tertutup: v.tertutup, aksiTersedia: v.aksiTersedia, journalPending: v.journalPending, currentDate: v.currentDate },
+      ])),
     });
   } catch (e) {
     console.error('proses-status:', e && e.stack);
+    return jawabJson(502, { ok: false, error: String((e && e.message) || e) });
+  }
+}
+
+/* POST /api/proses-signoff — { idToken, cabang: "manado"|"tomohon", aksi: "Sign Off"|"Sign On" }.
+   Aksi wajib disebut eksplisit (bukan ditebak dari status sekarang) supaya
+   tombol di browser dan yang benar-benar dieksekusi selalu sama persis —
+   kalau statusnya sudah berubah sejak layar digambar, jalankanAksiPosting
+   akan menolak sendiri (lihat pengecekan sebelum.aksiTersedia di sana). */
+export async function onRequestPostSignoff({ request, env }) {
+  env = await bacaEnv(env, NAMA_SECRET);
+  const isi = await bacaBadan(request);
+  const ditolak = await tolakKalauBukanPemilik(env, isi);
+  if (ditolak) return ditolak;
+
+  if (!['manado', 'tomohon'].includes(isi.cabang)) {
+    return jawabJson(400, { ok: false, error: 'Cabang wajib "manado" atau "tomohon"' });
+  }
+  if (!['Sign Off', 'Sign On'].includes(isi.aksi)) {
+    return jawabJson(400, { ok: false, error: 'Aksi wajib "Sign Off" atau "Sign On"' });
+  }
+
+  try {
+    const hasil = await jalankanAksiPosting(env.INTAJO_EMAIL, env.INTAJO_PASSWORD, isi.cabang, isi.aksi);
+    return jawabJson(200, { ok: true, ...hasil });
+  } catch (e) {
+    console.error('proses-signoff:', e && e.stack);
     return jawabJson(502, { ok: false, error: String((e && e.message) || e) });
   }
 }

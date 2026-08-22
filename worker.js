@@ -27,6 +27,7 @@ import {
 } from './functions/api/intajo-neraca.js';
 import {
   onRequestPostStatus as prosesStatusHandler,
+  onRequestPostSignoff as prosesSignoffHandler,
   onRequestPostJalankan as prosesJalankanHandler,
 } from './functions/api/intajo-proses.js';
 import { onRequestPost as mokaCatatHandler, catatKeMokaKalauWaktunya } from './functions/api/moka-catat.js';
@@ -68,6 +69,11 @@ export default {
     if (url.pathname === '/api/proses-status') {
       return request.method === 'POST'
         ? prosesStatusHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
+    if (url.pathname === '/api/proses-signoff') {
+      return request.method === 'POST'
+        ? prosesSignoffHandler({ request, env })
         : new Response('Gunakan POST', { status: 405 });
     }
     if (url.pathname === '/api/proses-jalankan') {

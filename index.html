@@ -389,8 +389,12 @@
           <div id="prosesIsi"><p class="muted">Memuat keadaan pembukuan…</p></div>
         </div>
 
-        <div id="neracaKolom" class="neraca-kolom"></div>
+        <div id="neracaKolom"></div>
       </section>
+
+      <!-- Popup detail neraca (Begin/Debit/Credit/Total per cabang). Diisi
+           lewat JS, sama seperti #notaDialog — kosong sampai dibuka. -->
+      <div class="neraca-dialog no-print" id="neracaDialog" hidden></div>
 
       <section class="view" id="view-kasbon">
         <div class="page-head">
