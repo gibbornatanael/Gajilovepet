@@ -17,14 +17,17 @@ const BASE = 'https://intajo.com';
 
 /* ID branch di intajo.com sempat tertukar di sini — nama cabang yang benar
    untuk tiap ID sudah dicek ulang dari dashboard intajo.com langsung. */
+/* "kode" = nomor cabang seperti tercetak di intajo ("001 - Manado").
+   Dipakai intajoNeraca.js untuk MEMASTIKAN PDF yang terunduh benar-benar
+   milik cabang yang diminta — lihat catatan di berkas itu. */
 export const CABANG = {
-  manado: { nama: 'Manado', id: 'ef9cbd0b-f50a-4ef2-9bd9-516082f7b98a' },
-  tomohon: { nama: 'Tomohon', id: 'cc1df7cb-1a58-4e81-9ee3-6a9468fab8b2' },
+  manado: { nama: 'Manado', kode: '001', id: 'ef9cbd0b-f50a-4ef2-9bd9-516082f7b98a' },
+  tomohon: { nama: 'Tomohon', kode: '002', id: 'cc1df7cb-1a58-4e81-9ee3-6a9468fab8b2' },
 };
 
 /* Login, kembalikan cookie sesi (string "session=...") untuk dipakai
    di request-request berikutnya. */
-async function login(email, password) {
+export async function login(email, password) {
   const res = await fetch(`${BASE}/login/`, {
     method: 'POST',
     redirect: 'manual',
@@ -36,7 +39,7 @@ async function login(email, password) {
   return cookie;
 }
 
-function ambilSessionCookie(res) {
+export function ambilSessionCookie(res) {
   // Cloudflare Workers menggabung banyak Set-Cookie jadi satu header;
   // pisahkan per "session=" karena itu satu-satunya cookie yang dipakai.
   const raw = res.headers.get('set-cookie') || '';

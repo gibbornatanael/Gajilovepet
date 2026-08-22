@@ -151,6 +151,13 @@ service cloud.firestore {
       allow write: if isPemilik();
     }
 
+    // Laporan neraca harian intajo.com (ditulis Worker, lihat
+    // functions/api/intajo-neraca.js).
+    match /klinik/{klinikId}/neracaIntajo/{tanggal} {
+      allow read: if isPemilik();
+      allow write: if isPemilik();
+    }
+
     // Semua jalur lain ditolak
     match /{document=**} {
       allow read, write: if false;

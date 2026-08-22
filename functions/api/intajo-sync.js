@@ -135,7 +135,7 @@ export async function onRequestPostTarik({ request, env }) {
   }
 }
 
-async function uidPemanggil(env, idToken) {
+export async function uidPemanggil(env, idToken) {
   const res = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${env.FIREBASE_API_KEY}`,
     {

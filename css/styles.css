@@ -328,6 +328,25 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 }
 .stat.untung-minus .v { color: var(--danger); }
 
+/* ---- Laporan neraca: Manado | Tomohon | Gabungan berdampingan ----
+   Di HP ketiganya menumpuk ke bawah (kolom neraca terlalu sempit kalau
+   dipaksa sejajar di layar kecil); mulai layar lebar baru sejajar tiga. */
+.neraca-kolom { display: grid; gap: 14px; grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 900px)  { .neraca-kolom { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1180px) { .neraca-kolom { grid-template-columns: repeat(3, 1fr); } }
+.neraca-kartu { min-width: 0; }
+.neraca-sisi { margin-top: 12px; }
+.neraca-sisi:first-of-type { margin-top: 0; }
+/* .tbl aslinya punya min-width 520px untuk tabel lebar; neraca cuma dua
+   kolom, jadi biar ikut menyempit mengikuti kartunya. */
+.neraca-tbl { min-width: 0; font-size: .8rem; }
+.neraca-tbl td { padding: 5px 6px; white-space: normal; }
+.neraca-tbl td:first-child { position: static; }
+.neraca-tbl .num { white-space: nowrap; }
+.neraca-tbl .neraca-induk td { font-weight: 700; }
+.neraca-tbl .neraca-minus { color: var(--danger); }
+.neraca-timpang { color: var(--danger); font-size: .78rem; font-weight: 600; margin: 10px 0 0; }
+
 /* ========================= DAFTAR (HP) ========================= */
 .list { margin: -4px -4px 0; }
 .list-row {

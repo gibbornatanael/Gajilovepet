@@ -50,6 +50,10 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
       <span>Rekap</span>
     </button>
+    <button class="tabitem tab-desktop-only" data-view="neraca">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v17M5 8.5h14"/><path d="M5 8.5 2.5 14h5zM19 8.5 16.5 14h5z"/></svg>
+      <span>Neraca</span>
+    </button>
     <button class="tabitem tab-desktop-only" data-view="kasbon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
       <span>Kasbon</span>
@@ -84,6 +88,10 @@
     <button class="tabitem" data-view="tahunan">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
       <span>Rekap</span>
+    </button>
+    <button class="tabitem" data-view="neraca">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v17M5 8.5h14"/><path d="M5 8.5 2.5 14h5zM19 8.5 16.5 14h5z"/></svg>
+      <span>Neraca</span>
     </button>
     <button class="tabitem" data-view="kasbon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
@@ -352,6 +360,28 @@
       </section>
 
       <!-- ====================== KASBON ====================== -->
+      <!-- ====================== LAPORAN NERACA ====================== -->
+      <section class="view" id="view-neraca">
+        <div class="page-head">
+          <h1>Laporan Neraca</h1>
+          <p class="muted">Posisi keuangan dari intajo.com — Manado, Tomohon &amp; gabungan keduanya, berdampingan.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Per tanggal</h2>
+            <label class="period-picker">
+              <span class="sr-only">Tanggal neraca</span>
+              <input type="date" id="neracaTanggal">
+            </label>
+            <button class="btn ghost" id="btnTarikNeraca" type="button">Tarik data sekarang</button>
+          </div>
+          <p class="muted" id="neracaKeterangan"></p>
+        </div>
+
+        <div id="neracaKolom" class="neraca-kolom"></div>
+      </section>
+
       <section class="view" id="view-kasbon">
         <div class="page-head">
           <h1>Kasbon Karyawan</h1>
@@ -487,6 +517,7 @@
 <script type="module" src="js/nota.js"></script>
 <script type="module" src="js/slip-terbit.js"></script>
 <script type="module" src="js/kasbon.js"></script>
+<script type="module" src="js/neraca.js"></script>
 <script type="module" src="js/chat.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

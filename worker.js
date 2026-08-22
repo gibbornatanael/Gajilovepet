@@ -21,6 +21,10 @@ import {
   onRequestPostTarik as intajoTarikHandler,
   jalankanKalauWaktunya,
 } from './functions/api/intajo-sync.js';
+import {
+  onRequestPostTarik as neracaTarikHandler,
+  sinkronNeracaHariIni,
+} from './functions/api/intajo-neraca.js';
 import { onRequestPost as mokaCatatHandler, catatKeMokaKalauWaktunya } from './functions/api/moka-catat.js';
 
 export default {
@@ -52,6 +56,11 @@ export default {
         ? intajoTarikHandler({ request, env })
         : new Response('Gunakan POST', { status: 405 });
     }
+    if (url.pathname === '/api/neraca-tarik') {
+      return request.method === 'POST'
+        ? neracaTarikHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
     if (url.pathname === '/api/moka-catat') {
       return request.method === 'POST'
         ? mokaCatatHandler({ request, env })
@@ -67,14 +76,27 @@ export default {
   // Cron Trigger (lihat wrangler.jsonc) berdetak tiap 30 menit, dua
   // pekerjaan independen nebeng di detak yang sama:
   //  1. jalankanKalauWaktunya   — tarikan intajo acak tiap 2,5–7 jam.
+  //     Neraca hari ini ikut ditarik SESUDAHNYA, tapi hanya kalau tarikan
+  //     ringkasan memang jadi berjalan — jadi neraca cukup menumpang
+  //     jadwal acak yang sudah ada, tak perlu jadwal sendiri. Gagalnya
+  //     neraca (scraping PDF lebih rapuh) tidak boleh menggagalkan
+  //     ringkasan, makanya error-nya ditangkap terpisah.
   //  2. catatKeMokaKalauWaktunya — jam 23:30 WITA, catat keuntungan hari
   //     itu ke dompet LOVEPET di MokaFamilyOS (detak berikutnya jadi
   //     mekanisme retry otomatis kalau gagal).
   async scheduled(event, env, ctx) {
     ctx.waitUntil(
-      jalankanKalauWaktunya(env).catch((e) => {
-        console.error('cron intajo-sync gagal:', e && e.stack);
-      })
+      jalankanKalauWaktunya(env)
+        .then((hasil) =>
+          hasil && hasil.ditarik
+            ? sinkronNeracaHariIni(env).catch((e) => {
+                console.error('cron neraca gagal:', e && e.stack);
+              })
+            : null
+        )
+        .catch((e) => {
+          console.error('cron intajo-sync gagal:', e && e.stack);
+        })
     );
     ctx.waitUntil(
       catatKeMokaKalauWaktunya(env).catch((e) => {
