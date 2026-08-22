@@ -23,6 +23,8 @@ const KOLOM = [
 ];
 
 let db = null, fsMod = null;
+let dokumenTerakhir = null;          // dokumen Firestore neraca yang sedang ditampilkan
+const modeDetail = new Set();        // kunci kolom (manado/tomohon/gabungan) yang sedang dibuka detailnya
 
 const q = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
@@ -100,16 +102,31 @@ async function segarkan() {
         `Belum ada neraca tersimpan untuk ${tanggalPanjang(tanggal)}. Tekan "Tarik data sekarang" untuk mengambilnya dari intajo.com — hasilnya baru terisi kalau pembukuan periode itu sudah diproses di intajo.`;
       return;
     }
-    const d = snap.data();
+    dokumenTerakhir = snap.data();
     if (ket) {
-      const jam = d.diperbaruiPada ? new Date(d.diperbaruiPada).toLocaleString('id-ID') : '—';
-      ket.textContent = `Neraca per ${tanggalPanjang(d.tanggal || tanggal)} · terakhir ditarik ${jam}`;
+      const jam = dokumenTerakhir.diperbaruiPada ? new Date(dokumenTerakhir.diperbaruiPada).toLocaleString('id-ID') : '—';
+      ket.textContent = `Neraca per ${tanggalPanjang(dokumenTerakhir.tanggal || tanggal)} · terakhir ditarik ${jam}`;
     }
-    wadah.innerHTML = KOLOM.map((k) => kartuKolom(k, k.ambil(d))).join('');
+    gambarKolom();
   } catch (e) {
     console.error('Neraca:', e);
     wadah.innerHTML = '<p class="muted">Gagal memuat neraca.</p>';
   }
+}
+
+/* Digambar ulang dari dokumenTerakhir (tanpa baca Firestore lagi) tiap
+   kali status "Ringkas/Detail" salah satu kolom diubah. */
+function gambarKolom() {
+  const wadah = q('#neracaKolom');
+  if (!wadah || !dokumenTerakhir) return;
+  wadah.innerHTML = KOLOM.map((k) => kartuKolom(k, k.ambil(dokumenTerakhir))).join('');
+  wadah.querySelectorAll('[data-toggle-detail]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const kunci = btn.dataset.toggleDetail;
+      modeDetail.has(kunci) ? modeDetail.delete(kunci) : modeDetail.add(kunci);
+      gambarKolom();
+    });
+  });
 }
 
 function kartuKolom(kolom, data) {
@@ -118,38 +135,57 @@ function kartuKolom(kolom, data) {
   // Neraca selalu harus seimbang. Kalau tidak, ada yang salah di
   // pembacaan PDF — lebih baik kelihatan daripada diam-diam menyesatkan.
   const seimbang = Math.round((data.totalKiri?.total || 0) - (data.totalKanan?.total || 0)) === 0;
+  const detail = modeDetail.has(kolom.kunci);
 
   return `
     <div class="card neraca-kartu">
-      <div class="card-head">
+      <div class="card-head neraca-head">
         <h2>${esc(kolom.judul)}</h2>
-        ${kolom.gabungan ? '<p class="muted">Kedua cabang dijumlahkan; akun Antar Cabang belum dieliminasi.</p>' : ''}
+        <button type="button" class="btn ghost btn-sm" data-toggle-detail="${kolom.kunci}">
+          ${detail ? 'Ringkas' : 'Detail'}
+        </button>
       </div>
-      ${sisi('Aset', data.kiri, data.totalKiri)}
-      ${sisi('Kewajiban & Modal', data.kanan, data.totalKanan)}
+      ${kolom.gabungan ? '<p class="muted neraca-catatan">Kedua cabang dijumlahkan; akun Antar Cabang belum dieliminasi.</p>' : ''}
+      ${sisi('Aset', data.kiri, data.totalKiri, detail)}
+      ${sisi('Kewajiban & Modal', data.kanan, data.totalKanan, detail)}
       ${seimbang ? '' : '<p class="neraca-timpang">⚠ Sisi kiri dan kanan tidak seimbang.</p>'}
     </div>`;
 }
 
-function sisi(judul, baris, total) {
+function sisi(judul, baris, total, detail) {
   if (!baris || !baris.length) return '';
+  const kolomAngka = detail
+    ? '<th class="num">Begin</th><th class="num">Debit</th><th class="num">Credit</th><th class="num">Total</th>'
+    : '<th class="num">Total</th>';
+  const kolomJumlah = detail
+    ? `<td class="num">${uang(total.begin)}</td><td class="num">${uang(total.debit)}</td><td class="num">${uang(total.credit)}</td><td class="num">${uang(total.total)}</td>`
+    : `<td class="num">${uang(total.total)}</td>`;
+
   return `
     <div class="neraca-sisi">
       <p class="cabang-judul">${esc(judul)}</p>
-      <table class="tbl neraca-tbl">
-        <tbody>${baris.map(barisHtml).join('')}</tbody>
-        ${total ? `<tfoot><tr><td>Jumlah</td><td class="num">${uang(total.total)}</td></tr></tfoot>` : ''}
-      </table>
+      <div class="table-scroll">
+        <table class="tbl neraca-tbl${detail ? ' neraca-tbl-detail' : ''}">
+          <thead><tr><th>Akun</th>${kolomAngka}</tr></thead>
+          <tbody>${baris.map((b) => barisHtml(b, detail)).join('')}</tbody>
+          ${total ? `<tfoot><tr><td>Jumlah</td>${kolomJumlah}</tr></tfoot>` : ''}
+        </table>
+      </div>
     </div>`;
 }
 
 /* Tingkat 0–1 adalah akun induk (dicetak tebal di intajo), 2 ke bawah
    rinciannya. Kedalamannya dipakai juga sebagai jarak menjorok. */
-function barisHtml(b) {
+function barisHtml(b, detail) {
   const tingkat = Number(b.tingkat) || 0;
-  return `<tr class="${tingkat <= 1 ? 'neraca-induk' : ''}">
-    <td style="padding-left:${6 + tingkat * 12}px" title="${esc(b.num)}">${esc(b.nama)}</td>
-    <td class="num ${Number(b.total) < 0 ? 'neraca-minus' : ''}">${uang(b.total)}</td>
+  const kelas = tingkat <= 1 ? 'neraca-induk' : '';
+  const angka = detail
+    ? `<td class="num">${uang(b.begin)}</td><td class="num">${uang(b.debit)}</td><td class="num">${uang(b.credit)}</td>
+       <td class="num ${Number(b.total) < 0 ? 'neraca-minus' : ''}">${uang(b.total)}</td>`
+    : `<td class="num ${Number(b.total) < 0 ? 'neraca-minus' : ''}">${uang(b.total)}</td>`;
+  return `<tr class="${kelas}">
+    <td style="padding-left:${8 + tingkat * 13}px" title="${esc(b.num)}">${esc(b.nama)}</td>
+    ${angka}
   </tr>`;
 }
 
