@@ -137,6 +137,18 @@ service cloud.firestore {
       allow update, delete: if isPemilik();
     }
 
+    // Jurnal rutin: "preset" transaksi berulang (sewa, listrik, dst.) yang
+    // dibuat pemilik di tab Jurnal, plus riwayat pengirimannya ke intajo.
+    // Riwayat ditulis dari browser SESUDAH Worker melapor sukses — ia
+    // catatan "apa yang sudah dikirim bulan ini", bukan sumber kebenaran
+    // pembukuan (yang sungguhan tetap di intajo).
+    match /klinik/{klinikId}/jurnalPreset/{presetId} {
+      allow read, write: if isPemilik();
+    }
+    match /klinik/{klinikId}/jurnalKirim/{kirimId} {
+      allow read, write: if isPemilik();
+    }
+
     // Catatan pengeluaran (foto nota yang dibaca AI).
     // Hanya pemilik — karyawan tidak pernah menyentuh koleksi ini.
     // Bot Telegram menulis lewat REST API memakai akun pemilik yang sama,

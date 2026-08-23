@@ -54,6 +54,10 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v17M5 8.5h14"/><path d="M5 8.5 2.5 14h5zM19 8.5 16.5 14h5z"/></svg>
       <span>Neraca</span>
     </button>
+    <button class="tabitem tab-desktop-only" data-view="jurnal">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h11l3.5 3.5v13.5H5z"/><path d="M8.5 9.5h7M8.5 13h7M8.5 16.5h4"/></svg>
+      <span>Jurnal</span>
+    </button>
     <button class="tabitem tab-desktop-only" data-view="kasbon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
       <span>Kasbon</span>
@@ -92,6 +96,10 @@
     <button class="tabitem" data-view="neraca">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v17M5 8.5h14"/><path d="M5 8.5 2.5 14h5zM19 8.5 16.5 14h5z"/></svg>
       <span>Neraca</span>
+    </button>
+    <button class="tabitem" data-view="jurnal">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h11l3.5 3.5v13.5H5z"/><path d="M8.5 9.5h7M8.5 13h7M8.5 16.5h4"/></svg>
+      <span>Jurnal</span>
     </button>
     <button class="tabitem" data-view="kasbon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
@@ -396,6 +404,53 @@
            lewat JS, sama seperti #notaDialog — kosong sampai dibuka. -->
       <div class="neraca-dialog no-print" id="neracaDialog" hidden></div>
 
+      <!-- ====================== JURNAL ====================== -->
+      <section class="view" id="view-jurnal">
+        <div class="page-head">
+          <h1>Jurnal</h1>
+          <p class="muted">Mencatat pengeluaran rutin ke intajo.com dengan satu ketukan &mdash; transaction list tetap yang Anda pilih sendiri, sama seperti di intajo.</p>
+        </div>
+
+        <!-- Inti fitur: transaksi yang itu-itu lagi tiap bulan, disimpan
+             sekali lalu tinggal dikirim. -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Jurnal rutin</h2>
+            <button class="btn ghost" id="btnTambahPreset" type="button">+ Preset baru</button>
+          </div>
+          <div id="jurnalPreset"><p class="muted">Memuat&hellip;</p></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Riwayat kiriman</h2>
+            <p class="muted">Yang tercatat di sini hanya kiriman dari aplikasi ini. Pembukuan sungguhan tetap di intajo.</p>
+          </div>
+          <div id="jurnalRiwayat"><p class="muted">Memuat&hellip;</p></div>
+        </div>
+
+        <!-- Alat bedah: dipakai sekali untuk mengenali formulir Journal
+             Create intajo (nama field + isi transaction list). Murni GET. -->
+        <details class="card" id="cardTelusur">
+          <summary><strong>Telusuri formulir intajo</strong> &mdash; alat bantu, hanya membaca</summary>
+          <div class="card-head">
+            <label class="period-picker">
+              <span class="sr-only">Cabang</span>
+              <select id="jurnalCabang">
+                <option value="manado">Manado</option>
+                <option value="tomohon">Tomohon</option>
+              </select>
+            </label>
+            <button class="btn ghost" id="btnTelusuriJurnal" type="button">Telusuri sekarang</button>
+            <button class="btn ghost" id="btnSalinTelusur" type="button" hidden>Salin hasil</button>
+          </div>
+          <div id="jurnalHasil"><p class="muted">Belum ditelusuri.</p></div>
+        </details>
+      </section>
+
+      <!-- Popup: sunting preset & kirim jurnal. Diisi lewat JS. -->
+      <div class="neraca-dialog no-print" id="jurnalDialog" hidden></div>
+
       <section class="view" id="view-kasbon">
         <div class="page-head">
           <h1>Kasbon Karyawan</h1>
@@ -532,6 +587,7 @@
 <script type="module" src="js/slip-terbit.js"></script>
 <script type="module" src="js/kasbon.js"></script>
 <script type="module" src="js/neraca.js"></script>
+<script type="module" src="js/jurnal.js"></script>
 <script type="module" src="js/chat.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

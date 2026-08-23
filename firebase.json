@@ -1,0 +1,8 @@
+{
+  "//": "Konfigurasi Firebase CLI — HANYA untuk menerbitkan aturan Firestore.",
+  "//2": "Hosting TIDAK dipakai: situsnya dilayani Cloudflare Worker (lihat wrangler.jsonc).",
+  "//3": "Terbitkan dengan: npx firebase deploy --only firestore:rules",
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

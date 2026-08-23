@@ -996,3 +996,26 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
   color: var(--text-secondary); font-size: .76rem; line-height: 1.5;
 }
 .chat-sistem small { color: var(--text-muted); font-size: .62rem; }
+
+/* ---- Jurnal rutin: kartu preset ----
+   Tiap kartu = satu transaksi berulang (sewa, listrik, dsb.). Lencana
+   "sudah/belum bulan ini" sengaja ikut di kartu, karena manfaat utama
+   fitur ini bukan cuma cepat mengetik tapi tidak lupa. */
+.jurnal-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.jurnal-kartu {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 12px; display: flex; flex-direction: column; gap: 6px;
+  background: var(--surface-2);
+}
+.jurnal-kartu h3 { margin: 0; font-size: .95rem; }
+.jurnal-kartu .jurnal-nominal { font-size: 1.1rem; font-weight: 600; }
+.jurnal-kartu .jurnal-aksi { display: flex; gap: 8px; margin-top: 4px; }
+.jurnal-kartu .jurnal-aksi .btn { flex: 1; }
+.jurnal-dialog-card { width: min(520px, 100%); }
+.jurnal-form label { display: block; margin-bottom: 10px; }
+.jurnal-form label > span { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 3px; }
+.jurnal-form input, .jurnal-form select { width: 100%; }
+.jurnal-kartu .jurnal-status.telat { color: var(--danger, #c0392b); font-weight: 600; }
+.jurnal-jadwal { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 12px; }
+.jurnal-jadwal legend { font-size: .78rem; color: var(--muted); padding: 0 6px; }
+.btn-kecil { padding: 2px 8px; font-size: .74rem; }

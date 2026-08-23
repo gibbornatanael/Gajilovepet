@@ -171,9 +171,9 @@ function kunciTahun(y) {
 function totalBulan(key) { return rows(key).reduce((s, r) => s + hitung(r).total, 0); }
 
 /* ============================ NAVIGASI ============================ */
-const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'chat', 'tahunan', 'neraca', 'kasbon', 'kelola'];
+const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'chat', 'tahunan', 'neraca', 'jurnal', 'kasbon', 'kelola'];
 // Tab yang di HP disembunyikan ke dalam sheet "Lainnya" (lihat #moreSheet di index.html)
-const VIEWS_LAINNYA = ['chat', 'tahunan', 'neraca', 'kasbon', 'kelola'];
+const VIEWS_LAINNYA = ['chat', 'tahunan', 'neraca', 'jurnal', 'kasbon', 'kelola'];
 
 function pindahView(nama) {
   // alias lama supaya tautan #karyawan / #pengaturan tetap jalan

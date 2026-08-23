@@ -30,6 +30,11 @@ import {
   onRequestPostSignoff as prosesSignoffHandler,
   onRequestPostJalankan as prosesJalankanHandler,
 } from './functions/api/intajo-proses.js';
+import {
+  onRequestPostTelusuri as jurnalTelusuriHandler,
+  onRequestPostTransaksi as jurnalTransaksiHandler,
+  onRequestPostBuat as jurnalBuatHandler,
+} from './functions/api/intajo-jurnal.js';
 import { onRequestPost as mokaCatatHandler, catatKeMokaKalauWaktunya } from './functions/api/moka-catat.js';
 
 export default {
@@ -79,6 +84,21 @@ export default {
     if (url.pathname === '/api/proses-jalankan') {
       return request.method === 'POST'
         ? prosesJalankanHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
+    if (url.pathname === '/api/jurnal-telusuri') {
+      return request.method === 'POST'
+        ? jurnalTelusuriHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
+    if (url.pathname === '/api/jurnal-transaksi') {
+      return request.method === 'POST'
+        ? jurnalTransaksiHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
+    if (url.pathname === '/api/jurnal-buat') {
+      return request.method === 'POST'
+        ? jurnalBuatHandler({ request, env })
         : new Response('Gunakan POST', { status: 405 });
     }
     if (url.pathname === '/api/moka-catat') {
