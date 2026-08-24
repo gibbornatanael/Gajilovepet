@@ -149,6 +149,15 @@ service cloud.firestore {
       allow read, write: if isPemilik();
     }
 
+    // Draft jurnal yang lahir otomatis dari SETIAP nota yang masuk lewat
+    // Telegram (lihat functions/api/telegram.js) — pemilik mengedit ledger
+    // & baris di tab Jurnal sebelum benar-benar dikirim ke intajo. Hilang
+    // begitu dikirim atau dibuang, jadi bukan riwayat permanen seperti
+    // jurnalKirim.
+    match /klinik/{klinikId}/jurnalDraft/{draftId} {
+      allow read, write: if isPemilik();
+    }
+
     // Catatan pengeluaran (foto nota yang dibaca AI).
     // Hanya pemilik — karyawan tidak pernah menyentuh koleksi ini.
     // Bot Telegram menulis lewat REST API memakai akun pemilik yang sama,

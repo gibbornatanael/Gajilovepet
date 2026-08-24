@@ -74,7 +74,6 @@ function renderLencana() {
     tab.textContent = n > 99 ? '99+' : String(n);
     tab.hidden = n === 0;
   });
-  if (window.pasangBadgeLainnya) window.pasangBadgeLainnya();
 }
 
 function renderStat() {

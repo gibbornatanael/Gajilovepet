@@ -162,37 +162,31 @@ hanya perlu bot Telegram-nya sudah aktif (PANDUAN-DEPLOY.md bagian E3).
 Kalau belum, satu-satunya yang hilang adalah bunyinya; pesannya tetap aman
 tersimpan.
 
-## Pencatatan pengeluaran — tab **Nota**
+## Pencatatan pengeluaran — nota lewat Telegram → jurnal di tab **Jurnal**
 
-Foto nota difoto/diunggah, lalu dibaca AI (Google Gemini) menjadi baris
-pengeluaran: **tanggal, toko, total, kategori, metode bayar, dan rincian
-barang per item**. Hasil bacaannya selalu ditampilkan dulu untuk diperiksa
-dan dikoreksi sebelum tersimpan — AI tidak pernah menyimpan diam-diam.
+Tidak ada lagi tab Nota terpisah. Foto nota **hanya masuk lewat Telegram**:
+forward/kirim foto ke grup → bot membacanya dengan AI (Google Gemini) →
+tanggal, toko, total, kategori, metode bayar, dan rincian barang tersimpan
+otomatis. Bot langsung menanyakan **cabang** (Manado/Tomohon) lalu
+**transaksi di intajo** (Transaction List, diambil langsung dari intajo
+lewat tombol chat) — jadi sebagian besar pekerjaan sudah selesai sebelum
+Anda sempat membuka aplikasi.
 
-Setiap nota punya kolom **Status**: *Kosong* (bawaan) · *Belum kirim Risa* ·
-*Terkirim ke Risa* · *Untuk ditahan*. Statusnya bisa diubah kapan saja
-langsung dari daftar.
+Setiap nota **langsung jadi draft jurnal**, muncul di tab **Jurnal** bagian
+"Draft dari Nota". Yang tersisa untuk diisi di aplikasi biasanya cuma baris
+ledger (debit/kredit) & nominalnya, lalu **Isi & Kirim** — mengirim
+langsung ke intajo.com. Tombol 📷 di tiap kartu (dan di baris Riwayat
+kiriman) membuka foto notanya, diambil langsung dari dokumennya sendiri.
 
-Daftarnya sengaja ringkas — satu baris per nota. **Ketuk barisnya** untuk
-membentangkan rincian barang, foto, dan tombol Ubah/Hapus. Tombol
-**Cetak / PDF** mencetak semuanya lengkap dengan rincian tiap barang,
-mengikuti filter bulan & status yang sedang aktif.
+Untuk pengeluaran yang berulang tiap bulan (sewa, listrik, cicilan), buat
+**preset** di kartu "Jurnal rutin" — kode transaksi & baris ledgernya diisi
+sekali, lalu tinggal ditekan tiap jatuh tempo. Kartunya berwarna hijau
+(masih lama) atau merah (≤5 hari lagi / terlambat).
 
-Ada dua cara memasukkan nota:
-
-| Cara | Langkah |
-|---|---|
-| **Dari aplikasi** | tab Nota → **Unggah nota** → potret/pilih foto → periksa hasilnya → pilih status → Simpan |
-| **Dari Telegram** | forward foto nota ke grup → bot membalas ringkasan + 4 tombol status → tekan satu → bot menjawab "✅ Tersimpan" (atau menjelaskan kalau gagal) |
-
-Kalau AI sedang tidak bisa dipakai, tombol **Catat manual** membuka formulir
-yang sama untuk diisi tangan.
-
-**Umur foto: 1 bulan.** Setelah bulannya lewat, foto tidak dihapus begitu
-saja — muncul spanduk di tab Nota (dan angka merah kecil di ikon tabnya)
-yang menawarkan mengunduh `nota-2026-07.zip` berisi seluruh fotonya +
-`daftar.csv`. Foto baru dilepas dari penyimpanan **setelah** ZIP-nya
-terunduh. Baris notanya sendiri tetap tersimpan selamanya.
+**Fotonya tidak lagi diarsipkan-lalu-dihapus otomatis** seperti versi lama
+— sekarang disimpan permanen di Firestore, karena tombol 📷 di atas
+mengandalkannya tetap ada. Volume nota klinik ini jauh di bawah kuota
+gratis Firestore, jadi ini bukan risiko nyata untuk beberapa tahun ke depan.
 
 Cara memasang kunci AI dan bot Telegram ada di **PANDUAN-DEPLOY.md bagian E**.
 
@@ -256,13 +250,12 @@ js/app.js                    logika aplikasi pemilik: input, slip, rekap
 js/cloud.js                  sinkronisasi Firebase aplikasi pemilik (opsional)
 js/provisioning.js           pemilik membuat akun login karyawan
 js/lapor.js                  logika aplikasi karyawan: lapor, capaian, slip, chat
-js/nota.js                   pencatatan pengeluaran: unggah nota, arsip ZIP, cetak
+js/jurnal.js                 draft nota → jurnal ke intajo.com, preset pengeluaran rutin
 js/slip-render.js            bentuk slip gaji — dipakai bersama kedua aplikasi
 js/slip-terbit.js            pemilik menyetujui / menarik otorisasi slip
 js/chat.js                   chat karyawan di sisi pemilik
-functions/_lib/gemini.js     pembacaan foto nota oleh AI (jalan di server Cloudflare)
-functions/api/nota.js        endpoint untuk tombol "Unggah nota"
-functions/api/telegram.js    webhook bot Telegram
+functions/_lib/gemini.js     pembacaan foto nota oleh AI (dipanggil dari bot Telegram)
+functions/api/telegram.js    webhook bot Telegram — nota masuk & jadi draft jurnal di sini
 functions/api/notify.js      meneruskan pesan karyawan ke bot Telegram pemilik
 js/firebase-config.js        ← isi ini untuk mengaktifkan sinkronisasi & lapor.html
 firestore.rules              aturan keamanan database — wajib dipasang

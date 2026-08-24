@@ -76,15 +76,17 @@ function belumDibacaTotal() {
   return karyawanChat().reduce((s, e) => s + (e.ruang ? Number(e.ruang.belumPemilik) || 0 : 0), 0);
 }
 
+/* Chat sekarang tombol ikon di topbar (bukan .tabitem lagi) — selektornya
+   sengaja umum ("[data-view=chat]") supaya tidak bergantung pada di mana
+   tombolnya diletakkan di index.html. */
 function renderLencana() {
-  const tabs = qq('.tabitem[data-view="chat"] .tab-badge');
+  const tabs = qq('[data-view="chat"] .tab-badge');
   if (!tabs.length) return;
   const n = belumDibacaTotal();
   tabs.forEach((tab) => {
     tab.textContent = n > 99 ? '99+' : String(n);
     tab.hidden = n === 0;
   });
-  if (window.pasangBadgeLainnya) window.pasangBadgeLainnya();
 }
 
 function renderDaftar() {

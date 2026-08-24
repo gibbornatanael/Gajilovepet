@@ -200,8 +200,8 @@ tetap tersimpan dan tetap muncul di aplikasi.
 > Kalau Anda mendirikan project baru, pilih **Workers**, bukan Pages, dan
 > ikuti langkah di bawah. Repo ini menyertakan `wrangler.jsonc` + `worker.js`
 > yang mengatur berkas apa saja yang disajikan sebagai situs statis dan
-> merutekan `/api/nota` & `/api/telegram` (lihat **bagian E**) — kedua
-> berkas itu WAJIB ikut di-push, wrangler membacanya otomatis saat deploy.
+> merutekan `/api/telegram` (lihat **bagian E**) — kedua berkas itu WAJIB
+> ikut di-push, wrangler membacanya otomatis saat deploy.
 
 1. Buka <https://dash.cloudflare.com> → **Compute (Workers)** → **Workers & Pages**
    → **Create** → **Workers** → **Connect to Git**
@@ -240,11 +240,12 @@ tersinkron begitu kembali online.
 
 ---
 
-## E. Pencatatan Pengeluaran (foto nota dibaca AI)
+## E. Pencatatan Pengeluaran (foto nota dibaca AI → draft di tab Jurnal)
 
-Bagian ini mengaktifkan tab **Nota**. Aplikasi tetap jalan tanpanya — kalau
-langkah di bawah dilewati, tab Nota masih bisa dipakai lewat tombol
-**"Catat manual"**, hanya pembacaan otomatisnya yang mati.
+Tidak ada lagi tab Nota tersendiri. Foto nota **hanya masuk lewat bot
+Telegram** — dibaca AI, langsung jadi draft jurnal, muncul di tab
+**Jurnal** aplikasi. Bagian ini memasang dua hal yang dibutuhkan: kunci AI
+(E1–E2) dan bot Telegram-nya sendiri (E3).
 
 ### E1. Ambil kunci AI (gratis, tanpa kartu kredit)
 
@@ -260,7 +261,7 @@ Kuota gratisnya jauh lebih dari cukup untuk klinik (ratusan nota per hari).
 
 ⚠️ Project ini adalah **Worker** (`lovepetcrew`), bukan Pages — tempatnya
 **bukan** di Settings → Build → "Variables and secrets" (kotak itu hanya
-dibaca saat proses *build*, bukan saat `/api/nota` benar-benar dipanggil).
+dibaca saat proses *build*, bukan saat `/api/telegram` benar-benar dipanggil).
 
 **Cara paling gampang — lewat Terminal** (terbukti jalan, dialog dashboard
 "Add binding → Secrets Store" sering membingungkan/tidak tersimpan):
@@ -288,10 +289,8 @@ Kalau setelah disimpan "Connected Bindings" tetap kosong, jangan buang
 waktu berulang — langsung pakai cara Terminal di atas, hasilnya sama.
 </details>
 
-Sesudah ini tombol **Unggah nota** di aplikasi sudah berfungsi. Cara
-memastikannya benar: buka `https://lovepetcrew.<akun-anda>.workers.dev/api/nota`
-langsung di browser — harus muncul `{"error":"Gunakan POST"}` (tanda
-endpoint-nya hidup), bukan halaman 404.
+Kunci ini baru terlihat hasilnya sesudah bot Telegram (**E3**) juga
+terpasang — pembacaan foto memang cuma dipanggil dari sana sekarang.
 
 ### E3. Bot Telegram (opsional, tapi enak dipakai)
 
@@ -301,7 +300,7 @@ endpoint-nya hidup), bukan halaman 404.
 2. Buat grup baru, masukkan bot itu ke dalamnya.
 3. Masih di BotFather: `/setprivacy` → pilih bot Anda → **Disable**.
    Tanpa ini bot tidak melihat foto yang dikirim di grup.
-4. Pasang tujuh secret berikut lewat Terminal (cara sama seperti **E2** —
+4. Pasang sembilan secret berikut lewat Terminal (cara sama seperti **E2** —
    `npx wrangler secret put NAMA`, satu per satu, tempel nilainya saat
    diminta):
 
@@ -314,6 +313,13 @@ endpoint-nya hidup), bukan halaman 404.
 | `npx wrangler secret put FIREBASE_PROJECT_ID` | `gajilovepet` |
 | `npx wrangler secret put OWNER_EMAIL` | email yang Anda pakai masuk ke aplikasi |
 | `npx wrangler secret put OWNER_PASSWORD` | kata sandinya |
+| `npx wrangler secret put INTAJO_EMAIL` | akun login intajo.com |
+| `npx wrangler secret put INTAJO_PASSWORD` | kata sandinya |
+
+Dua yang terakhir (`INTAJO_EMAIL`/`INTAJO_PASSWORD`) dipakai bot untuk
+mengambil Transaction List saat menanyakan kode transaksi lewat tombol
+chat — kalau fitur Neraca/Jurnal di aplikasi sudah pernah dipasang
+sebelumnya, kedua secret ini kemungkinan sudah ada dan tidak perlu diulang.
 
 5. Sambungkan bot ke aplikasi. Buka alamat ini sekali di browser
    (ganti `TOKEN`, `ALAMAT-WORKER`, dan `RAHASIA` sesuai punya Anda —
@@ -332,8 +338,11 @@ endpoint-nya hidup), bukan halaman 404.
    lain memakai bot Anda.
 
 **Cara pakai:** forward atau kirim foto nota ke grup → bot membalas
-ringkasannya + empat tombol status → tekan satu → bot menjawab
-"✅ Tersimpan". Notanya langsung muncul di tab Nota aplikasi.
+ringkasannya dan langsung menyimpannya sebagai draft jurnal → bot bertanya
+**cabang** (tombol Manado/Tomohon) → bot mengambil Transaction List dari
+intajo dan bertanya **kode transaksinya** (tombol) → selesai di Telegram.
+Draftnya sudah menunggu di tab **Jurnal** aplikasi — tinggal isi baris
+ledger & nominal, lalu **Isi & Kirim**.
 
 ### E4. Tentang keamanan sandi pemilik
 
@@ -344,20 +353,14 @@ lagi setelah disimpan, tidak ikut ke GitHub) dan tidak pernah dikirim ke
 Telegram maupun ke browser. Kalau suatu saat Anda ganti sandi aplikasi,
 perbarui juga Secret ini.
 
-### E5. Arsip foto bulanan
+### E5. Foto nota disimpan permanen
 
-Foto nota disimpan penuh selama **bulan berjalan + bulan sebelumnya belum
-diarsipkan**. Begitu bulannya lewat, di tab Nota muncul spanduk hijau dan
-angka merah kecil di ikon tab:
-
-> **Foto nota Juli 2026 siap diarsipkan** — 23 foto… **[Unduh ZIP]**
-
-Menekannya mengunduh `nota-2026-07.zip` (berisi semua fotonya + `daftar.csv`)
-**lalu baru** melepas foto itu dari Firestore. Jadi tidak ada foto yang hilang
-tanpa salinan. Baris notanya sendiri — tanggal, toko, total, rincian barang —
-tetap tersimpan selamanya dan tetap ikut tercetak di PDF.
-
-Simpan ZIP-nya di iCloud/Drive supaya aman.
+Versi lama sempat mengarsipkan foto yang sudah lewat sebulan jadi ZIP lalu
+melepasnya dari Firestore. Mekanisme itu sudah dilepas: sekarang foto
+disimpan **selamanya** di Firestore, supaya tombol 📷 (lihat foto) di kartu
+draft/riwayat jurnal selalu bisa dibuka, kapan pun. Volume nota klinik ini
+jauh di bawah kuota gratis Firestore, jadi ini bukan risiko nyata untuk
+beberapa tahun ke depan.
 
 ---
 

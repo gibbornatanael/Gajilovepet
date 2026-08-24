@@ -17,7 +17,7 @@
    pantas terjadi diam-diam di latar belakang.
    ========================================================================= */
 import { bacaEnv } from '../_lib/env.js';
-import { telusuriJurnal, ambilDaftarTransaksi, buatJurnal } from '../_lib/intajoJurnal.js';
+import { telusuriJurnal, ambilDaftarTransaksi, ambilLedgerTransaksi, buatJurnal } from '../_lib/intajoJurnal.js';
 import { bacaDokumen } from '../_lib/firestoreAdmin.js';
 import { uidPemanggil } from './intajo-sync.js';
 
@@ -69,6 +69,26 @@ export async function onRequestPostTransaksi({ request, env }) {
     return jawabJson(200, { ok: true, ...hasil });
   } catch (e) {
     console.error('jurnal-transaksi:', e && e.stack);
+    return jawabJson(502, { ok: false, error: String((e && e.message) || e) });
+  }
+}
+
+/* POST /api/jurnal-ledger — { idToken, cabang, transaksi: "KEB|S|<uuid>" }
+   Menampilkan ledger debit/kredit bawaan sebuah kode transaksi, supaya
+   pemilik bisa memastikan presetnya menunjuk ke akun yang benar sebelum
+   ada jurnal yang dikirim. Membaca saja. */
+export async function onRequestPostLedger({ request, env }) {
+  env = await bacaEnv(env, NAMA_SECRET);
+  const isi = await bacaBadan(request);
+  const ditolak = await tolakKalauBukanPemilik(env, isi);
+  if (ditolak) return ditolak;
+
+  const cabang = ['manado', 'tomohon'].includes(isi.cabang) ? isi.cabang : 'manado';
+  try {
+    const hasil = await ambilLedgerTransaksi(env.INTAJO_EMAIL, env.INTAJO_PASSWORD, cabang, isi.transaksi);
+    return jawabJson(200, { ok: true, ...hasil });
+  } catch (e) {
+    console.error('jurnal-ledger:', e && e.stack);
     return jawabJson(502, { ok: false, error: String((e && e.message) || e) });
   }
 }

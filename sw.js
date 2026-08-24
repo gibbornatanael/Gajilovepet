@@ -4,7 +4,7 @@
    saat online), jatuh ke cache kalau offline. Firebase & CDN tidak di-cache.
    Naikkan VERSI setiap kali menerbitkan perubahan besar.
    ========================================================================= */
-const VERSI = 'lovepet-v14';
+const VERSI = 'lovepet-v26';
 const ISI = [
   './',
   './index.html',
@@ -15,13 +15,14 @@ const ISI = [
   './js/app.js',
   './js/cloud.js',
   './js/provisioning.js',
-  './js/nota.js',
   './js/lapor.js',
   './js/slip-render.js',
   './js/slip-terbit.js',
   './js/kasbon.js',
   './js/chat.js',
   './js/ayat.js',
+  './js/neraca.js',
+  './js/jurnal.js',
   './js/firebase-config.js',
   './manifest.webmanifest',
   './icons/icon-180.png',

@@ -4,16 +4,19 @@
    Situs ini di-deploy sebagai Worker biasa (bukan Cloudflare Pages), jadi
    TIDAK ada routing otomatis berdasarkan struktur folder. Berkas ini yang
    menyambungkan dua hal:
-     • /api/nota, /api/telegram, /api/notify → dilempar ke functions/api/*.js
+     • /api/telegram, /api/notify, dst. → dilempar ke functions/api/*.js
      • semua alamat lain (index.html, css/, js/, …) → dilayani langsung
        dari berkas statis lewat binding "ASSETS" (diatur di wrangler.jsonc)
 
-   functions/api/nota.js dan functions/api/telegram.js ditulis mengikuti
-   gaya Cloudflare Pages Functions — sengaja dipertahankan begitu (dan
-   masih bisa dipakai apa adanya) karena keduanya hanya membutuhkan
-   { request, env }, jadi tinggal dipanggil langsung dari sini.
-   ========================================================================= */
-import { onRequestPost as notaHandler } from './functions/api/nota.js';
+   functions/api/telegram.js ditulis mengikuti gaya Cloudflare Pages
+   Functions — sengaja dipertahankan begitu (dan masih bisa dipakai apa
+   adanya) karena hanya membutuhkan { request, env }, jadi tinggal
+   dipanggil langsung dari sini.
+
+   Tidak ada lagi /api/nota: tombol "Unggah nota" di aplikasi sudah
+   dihapus bersama tab Nota. Telegram sekarang satu-satunya jalan nota
+   masuk (lihat functions/api/telegram.js) — bot itu membaca fotonya
+   langsung lewat functions/_lib/gemini.js tanpa lewat HTTP. */
 import { onRequestPost as telegramHandler } from './functions/api/telegram.js';
 import { onRequestPost as notifyHandler } from './functions/api/notify.js';
 import {
@@ -33,6 +36,7 @@ import {
 import {
   onRequestPostTelusuri as jurnalTelusuriHandler,
   onRequestPostTransaksi as jurnalTransaksiHandler,
+  onRequestPostLedger as jurnalLedgerHandler,
   onRequestPostBuat as jurnalBuatHandler,
 } from './functions/api/intajo-jurnal.js';
 import { onRequestPost as mokaCatatHandler, catatKeMokaKalauWaktunya } from './functions/api/moka-catat.js';
@@ -41,11 +45,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (url.pathname === '/api/nota') {
-      return request.method === 'POST'
-        ? notaHandler({ request, env })
-        : new Response('Gunakan POST', { status: 405 });
-    }
     if (url.pathname === '/api/telegram') {
       return request.method === 'POST'
         ? telegramHandler({ request, env })
@@ -94,6 +93,11 @@ export default {
     if (url.pathname === '/api/jurnal-transaksi') {
       return request.method === 'POST'
         ? jurnalTransaksiHandler({ request, env })
+        : new Response('Gunakan POST', { status: 405 });
+    }
+    if (url.pathname === '/api/jurnal-ledger') {
+      return request.method === 'POST'
+        ? jurnalLedgerHandler({ request, env })
         : new Response('Gunakan POST', { status: 405 });
     }
     if (url.pathname === '/api/jurnal-buat') {

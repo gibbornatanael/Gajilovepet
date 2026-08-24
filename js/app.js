@@ -116,10 +116,9 @@ window.LovePet = {
     if (!state.payroll[periode]) periode = periodeTerakhir();
     render();
   },
-  /* Dipakai js/nota.js — ia sebuah module, jadi tidak bisa memanggil
-     fungsi di berkas ini secara langsung. */
+  /* Dipakai js/chat.js & js/kasbon.js — keduanya module, jadi tidak bisa
+     memanggil fungsi di berkas ini secara langsung. */
   toast: (m) => toast(m),
-  cetak: (html) => cetak(html),
 
   /* Dipakai js/kasbon.js sesudah sebuah pengajuan disetujui: kalau
      karyawan itu sudah punya baris gaji di bulan yang sedang dibuka DAN
@@ -170,22 +169,75 @@ function kunciTahun(y) {
 }
 function totalBulan(key) { return rows(key).reduce((s, r) => s + hitung(r).total, 0); }
 
-/* ============================ NAVIGASI ============================ */
-const VIEWS = ['dashboard', 'input', 'slip', 'nota', 'chat', 'tahunan', 'neraca', 'jurnal', 'kasbon', 'kelola'];
-// Tab yang di HP disembunyikan ke dalam sheet "Lainnya" (lihat #moreSheet di index.html)
-const VIEWS_LAINNYA = ['chat', 'tahunan', 'neraca', 'jurnal', 'kasbon', 'kelola'];
+/* ============================ NAVIGASI ============================
+   Cuma 6 view sungguhan sekarang: dashboard, gaji (gabungan Input/Slip/
+   Rekap), jurnal (gabungan Jurnal/Neraca), kasbon, chat, kelola. Chat &
+   Kelola dijangkau lewat ikon di topbar (lihat index.html), bukan tab —
+   makanya tidak ada lagi sheet "Lainnya", 4 tab utama + 2 ikon sudah
+   cukup ringkas untuk tab bar HP. */
+const VIEWS = ['dashboard', 'gaji', 'jurnal', 'kasbon', 'chat', 'kelola'];
 
-function pindahView(nama) {
+/* Nama tab lama (dari sebelum digabung) tetap dikenali — dipakai oleh
+   pindahView('slip') dkk. di berkas ini sendiri, dan supaya tautan/hash
+   lama (#input, #neraca, dst.) tidak membawa ke layar kosong. Memetakan
+   ke [view gabungan, nama sub-tab di dalamnya]. */
+const SUBTAB_ALIAS = {
+  input: ['gaji', 'input'], slip: ['gaji', 'slip'], tahunan: ['gaji', 'tahunan'],
+  neraca: ['jurnal', 'neraca'],
+};
+
+let subTabAktif = { gaji: 'input', jurnal: 'jurnal' };
+
+/* Menu segmented DI DALAM view-gaji / view-jurnal — pola yang sama dengan
+   segmented Kelola (segAktif/pasangSegmen di bawah), tapi ditulis terpisah
+   karena dua alasan: (1) Kelola sudah ada & teruji, tidak perlu diutak-atik
+   ulang untuk sekadar menambah grup baru; (2) pasangSegmen() versi Kelola
+   memilih pane lewat `$$('.segpane')` TANPA menyaring ke #segKelola saja —
+   aman selama cuma satu grup segmented yang memakainya, tapi akan salah
+   pilih pane kalau dipakai ulang untuk grup lain. pindahSubTab() di bawah
+   menyaring lewat id pane yang eksplisit, jadi tidak mewarisi masalah itu. */
+function pindahSubTab(grup, nama, { render: segarkan = true } = {}) {
+  subTabAktif[grup] = nama;
+  const grupSel = grup === 'gaji' ? '#segGaji' : '#segJurnalMenu';
+  $$(`${grupSel} .seg`).forEach((b) => b.classList.toggle('is-active', b.dataset.seg === nama));
+
+  if (grup === 'gaji') {
+    $('#gajiPaneInput').classList.toggle('is-active', nama === 'input');
+    $('#gajiPaneSlip').classList.toggle('is-active', nama === 'slip');
+    $('#gajiPaneTahunan').classList.toggle('is-active', nama === 'tahunan');
+    if (segarkan) {
+      if (nama === 'input') renderInput();
+      else if (nama === 'slip') renderSlipView();
+      else if (nama === 'tahunan') renderTahunan();
+    }
+  } else if (grup === 'jurnal') {
+    $('#jurnalPaneJurnal').classList.toggle('is-active', nama === 'jurnal');
+    $('#jurnalPaneNeraca').classList.toggle('is-active', nama === 'neraca');
+    if (segarkan) {
+      if (nama === 'jurnal' && window.Jurnal) window.Jurnal.segarkan(periode);
+      else if (nama === 'neraca' && window.Neraca) window.Neraca.segarkan();
+    }
+  }
+}
+$('#segGaji').addEventListener('click', (e) => {
+  const b = e.target.closest('.seg');
+  if (b) pindahSubTab('gaji', b.dataset.seg);
+});
+$('#segJurnalMenu').addEventListener('click', (e) => {
+  const b = e.target.closest('.seg');
+  if (b) pindahSubTab('jurnal', b.dataset.seg);
+});
+
+function pindahView(nama, sub) {
   // alias lama supaya tautan #karyawan / #pengaturan tetap jalan
   if (nama === 'karyawan' || nama === 'pengaturan') { segAktif = nama; nama = 'kelola'; }
+  if (SUBTAB_ALIAS[nama]) { const a = SUBTAB_ALIAS[nama]; nama = a[0]; sub = sub || a[1]; }
   if (!VIEWS.includes(nama)) nama = 'dashboard';
-  $$('.tabitem').forEach((t) => t.classList.toggle('is-active', t.dataset.view === nama));
-  const tabMore = $('#tabMore');
-  if (tabMore) tabMore.classList.toggle('is-active', VIEWS_LAINNYA.includes(nama));
+  if (sub) pindahSubTab(nama, sub, { render: false });   // render(nama) di bawah yang menyegarkan
+  $$('[data-view]').forEach((t) => t.classList.toggle('is-active', t.dataset.view === nama));
   $$('.view').forEach((v) => v.classList.toggle('is-active', v.id === 'view-' + nama));
   if (location.hash.slice(1) !== nama) history.replaceState(null, '', '#' + nama);
   window.scrollTo({ top: 0 });
-  tutupLainnya();
   render(nama);
 }
 window.addEventListener('hashchange', () => pindahView(location.hash.slice(1)));
@@ -194,34 +246,8 @@ $('#tabs').addEventListener('click', (e) => {
   const t = e.target.closest('.tabitem');
   if (t && t.dataset.view) pindahView(t.dataset.view);
 });
-
-/* Sheet "Lainnya" di HP: tampung Chat/Rekap/Kelola supaya tab bar tak sesak */
-function bukaLainnya() {
-  $('#moreBackdrop').hidden = false;
-  $('#moreSheet').hidden = false;
-  $('#tabMore').setAttribute('aria-expanded', 'true');
-}
-function tutupLainnya() {
-  const backdrop = $('#moreBackdrop'), sheet = $('#moreSheet'), tabMore = $('#tabMore');
-  if (backdrop) backdrop.hidden = true;
-  if (sheet) sheet.hidden = true;
-  if (tabMore) tabMore.setAttribute('aria-expanded', 'false');
-}
-$('#tabMore').addEventListener('click', () => {
-  $('#moreSheet').hidden ? bukaLainnya() : tutupLainnya();
-});
-$('#moreBackdrop').addEventListener('click', tutupLainnya);
-$('#moreSheet').addEventListener('click', (e) => {
-  const t = e.target.closest('.tabitem');
-  if (t) pindahView(t.dataset.view);
-});
-// Titik merah di "Lainnya" kalau salah satu tab tersembunyi (mis. Chat) punya lencana aktif
-window.pasangBadgeLainnya = function pasangBadgeLainnya() {
-  const badge = $('#moreBadge');
-  if (!badge) return;
-  const adaLencana = $$('#moreSheet .tab-badge').some((b) => !b.hidden);
-  badge.hidden = !adaLencana;
-};
+$('#btnChat').addEventListener('click', () => pindahView('chat'));
+$('#btnSetting').addEventListener('click', () => pindahView('kelola'));
 
 /* Segmented control di halaman Kelola */
 let segAktif = 'karyawan';
@@ -233,7 +259,11 @@ $('#segKelola').addEventListener('click', (e) => {
 });
 function pasangSegmen() {
   $$('#segKelola .seg').forEach((b) => b.classList.toggle('is-active', b.dataset.seg === segAktif));
-  $$('.segpane').forEach((p) => p.classList.toggle('is-active', p.id === 'seg-' + segAktif));
+  // Disaring ke dalam #view-kelola saja — sejak view-gaji/view-jurnal juga
+  // punya elemen ber-class .segpane (untuk sub-tab masing-masing), query
+  // tanpa saringan ini akan ikut mereset is-active punya mereka tiap kali
+  // Kelola dibuka.
+  $$('#view-kelola .segpane').forEach((p) => p.classList.toggle('is-active', p.id === 'seg-' + segAktif));
 }
 
 function gantiTema() {
@@ -243,7 +273,6 @@ function gantiTema() {
   render();
 }
 $('#themeToggle').addEventListener('click', gantiTema);
-$('#themeToggleHp').addEventListener('click', gantiTema);
 document.documentElement.dataset.theme = gudang.getItem('lovepet-theme') || 'light';
 
 /* ============================ PERIODE ============================ */
@@ -272,11 +301,17 @@ function render(hanya) {
   isiPeriode();
   const aktif = hanya || ($('.view.is-active') || {}).id?.replace('view-', '') || 'dashboard';
   if (aktif === 'dashboard') renderDashboard();
-  if (aktif === 'input')     renderInput();
-  if (aktif === 'slip')      renderSlipView();
+  // 'gaji' = view gabungan Input/Slip/Rekap — ketiganya disegarkan
+  // sekaligus (sama seperti Kelola menyegarkan Karyawan & Pengaturan
+  // sekaligus), supaya isinya tetap benar kalau dropdown bulan/tahun
+  // berubah sementara sub-tab lain yang sedang tampil.
+  if (aktif === 'gaji' || aktif === 'input')   renderInput();
+  if (aktif === 'gaji' || aktif === 'slip')    renderSlipView();
+  if (aktif === 'gaji' || aktif === 'tahunan') renderTahunan();
   if (aktif === 'chat' && window.ChatPemilik) window.ChatPemilik.segarkan();
-  if (aktif === 'tahunan')   renderTahunan();
-  if (aktif === 'neraca' && window.Neraca) window.Neraca.segarkan();
+  // 'jurnal' = view gabungan Jurnal/Neraca — sama, disegarkan sekaligus.
+  if ((aktif === 'jurnal' || aktif === 'neraca') && window.Neraca) window.Neraca.segarkan();
+  if (aktif === 'jurnal' && window.Jurnal) window.Jurnal.segarkan(periode);
   if (aktif === 'kasbon' && window.Kasbon) window.Kasbon.segarkan();
   if (aktif === 'kelola')  { pasangSegmen(); renderKaryawan(); renderPengaturan(); }
 }
@@ -772,7 +807,7 @@ function hitungUlangSemua() {
 }
 
 /* --------------------------- INTERAKSI --------------------------- */
-$('#view-input').addEventListener('input', (e) => {
+$('#gajiPaneInput').addEventListener('input', (e) => {
   const el = e.target;
   const i = Number(el.dataset.i);
   const r = rows(periode)[i];
@@ -792,7 +827,7 @@ $('#view-input').addEventListener('input', (e) => {
   simpan();
 });
 
-$('#view-input').addEventListener('click', (e) => {
+$('#gajiPaneInput').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-act]');
   if (!b) return;
   const i = Number(b.dataset.i);

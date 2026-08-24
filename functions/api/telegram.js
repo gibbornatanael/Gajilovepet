@@ -1,18 +1,19 @@
 /* =========================================================================
    POST /api/telegram — webhook bot Telegram
    -------------------------------------------------------------------------
-   Alur di grup:
+   Alur di grup (satu-satunya jalan nota masuk sekarang — tab Nota di
+   aplikasi sudah dihapus, lihat catatan di js/jurnal.js):
      1. Anda forward / kirim foto nota ke grup.
-     2. Bot membaca fotonya dengan AI, langsung menyimpannya ke Firestore
-        dengan status "Kosong", lalu membalas ringkasannya beserta empat
-        tombol status.
-     3. Anda tekan salah satu tombol → status diperbarui dan bot menyunting
-        pesannya jadi "✅ Tersimpan …". Kalau gagal, bot mengatakan gagalnya
-        dan apa sebabnya.
-
-   Nota disimpan lebih dulu (sebelum status dipilih) supaya foto tidak pernah
-   hilang kalau Anda keburu menutup Telegram — status tinggal diubah, baik
-   dari tombol di sini maupun dari daftar di aplikasi.
+     2. Bot membaca fotonya dengan AI, menyimpannya ke Firestore, dan
+        SELALU membuat draft jurnal langsung — tidak ada lagi status
+        "Untuk ditahan/Belum/Terkirim ke Risa" untuk dipilih. Setiap nota
+        dari sini memang untuk dijurnal pemilik sendiri.
+     3. Bot menanyakan CABANG (Manado/Tomohon), lalu mengambil Transaction
+        List langsung dari intajo dan menanyakannya sebagai tombol —
+        supaya sebagian besar pekerjaan sudah selesai sebelum pemilik
+        sempat membuka aplikasi. Ledger debit/kredit & nominalnya tetap
+        diisi di tab Jurnal (aplikasi), bukan dari Telegram — pilihannya
+        bisa banyak dan perlu dilihat, tidak muat sebagai tombol chat.
 
    Pengaturan (Cloudflare → Pages → Settings → Variables, semuanya "Secret"):
      TELEGRAM_BOT_TOKEN   token dari @BotFather
@@ -23,24 +24,20 @@
      FIREBASE_PROJECT_ID  "gajilovepet"
      OWNER_EMAIL          email akun pemilik di aplikasi
      OWNER_PASSWORD       kata sandinya
+     INTAJO_EMAIL         akun intajo.com (dipakai buat baca Transaction List)
+     INTAJO_PASSWORD      kata sandinya
    Langkah lengkapnya ada di PANDUAN-DEPLOY.md bagian "Bot Telegram".
    ========================================================================= */
 import { bacaNota } from '../_lib/gemini.js';
 import { bacaEnv } from '../_lib/env.js';
+import { ambilDaftarTransaksi } from '../_lib/intajoJurnal.js';
+import { CABANG } from '../_lib/intajoScraper.js';
 
 const KLINIK_ID = 'lovepet';
 const NAMA_SECRET = ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_SECRET', 'TELEGRAM_CHAT_ID',
-  'GEMINI_API_KEY', 'FIREBASE_API_KEY', 'FIREBASE_PROJECT_ID', 'OWNER_EMAIL', 'OWNER_PASSWORD'];
+  'GEMINI_API_KEY', 'FIREBASE_API_KEY', 'FIREBASE_PROJECT_ID', 'OWNER_EMAIL', 'OWNER_PASSWORD',
+  'INTAJO_EMAIL', 'INTAJO_PASSWORD'];
 const BATAS_FOTO = 700 * 1024;   // sama dengan batas di aplikasi
-
-const STATUS = [
-  { id: 'belum',    label: 'Belum kirim Risa' },
-  { id: 'terkirim', label: 'Terkirim ke Risa' },
-  { id: 'tahan',    label: 'Untuk ditahan' },
-  { id: '',         label: 'Kosongkan dulu' },
-];
-const labelStatus = (id) =>
-  (STATUS.find((s) => s.id === (id || '')) || { label: 'Kosong' }).label;
 
 export async function onRequestPost({ request, env }) {
   env = await bacaEnv(env, NAMA_SECRET);
@@ -83,8 +80,8 @@ async function tanganiPesan(msg, env) {
   const teks = String(msg.text || '').trim();
   if (teks.startsWith('/start') || teks.startsWith('/bantuan') || teks.startsWith('/help')) {
     await kirim(env, chatId,
-      'Kirim atau forward <b>foto nota</b> ke grup ini. Saya baca isinya, simpan ke aplikasi, ' +
-      'lalu tanyakan statusnya.\n\n<code>/id</code> — tampilkan id grup ini.');
+      'Kirim atau forward <b>foto nota</b> ke grup ini. Saya baca isinya, simpan sebagai draft ' +
+      'jurnal, lalu tanyakan cabang &amp; transaksinya di intajo.\n\n<code>/id</code> — tampilkan id grup ini.');
     return;
   }
   if (teks.startsWith('/id')) {
@@ -109,14 +106,16 @@ async function tanganiPesan(msg, env) {
     const nota = await bacaNota(base64, mime, env.GEMINI_API_KEY);
 
     const token = await masukFirebase(env);
-    const id = await buatNota(env, token, Object.assign({}, nota, {
+    const notaId = await buatNota(env, token, Object.assign({}, nota, {
       foto: `data:${mime};base64,${base64}`,
-      status: '',
       sumber: 'telegram',
     }));
+    // SELALU dibuat — tidak ada lagi status "Untuk ditahan" untuk dipilih
+    // dulu. Nota dari Telegram memang untuk dijurnal pemilik sendiri.
+    const draftId = await buatDraftJurnal(env, token, notaId, nota);
 
     await sunting(env, chatId, menunggu, ringkasan(nota) +
-      '\n\nSudah tersimpan di aplikasi. Statusnya apa?', tombolStatus(id));
+      '\n\nTersimpan sebagai draft jurnal. Cabang mana?', tombolCabang(draftId));
   } catch (e) {
     console.error('nota telegram:', e && e.stack);
     await sunting(env, chatId, menunggu,
@@ -159,32 +158,87 @@ function keBase64(buf) {
 }
 
 /* ------------------------------ Tombol status ------------------------------ */
-function tombolStatus(id) {
+function tombolCabang(draftId) {
   return {
-    inline_keyboard: STATUS.map((s) => [{ text: s.label, callback_data: `s|${id}|${s.id}` }]),
+    inline_keyboard: Object.entries(CABANG).map(([kunci, c]) =>
+      [{ text: c.nama, callback_data: `c|${draftId}|${kunci}` }]),
   };
+}
+
+/* Telegram membatasi callback_data 64 byte — makanya yang dikirim per
+   tombol transaksi cuma KODE-nya (2-6 huruf), bukan value penuh
+   "KEB|S|<uuid>". Value lengkapnya dicari ulang dari Transaction List
+   saat tombolnya ditekan, lihat pilihTransaksi(). */
+function tombolTransaksi(draftId, daftar) {
+  const tombol = daftar.map((t) => ({
+    text: t.label.length > 40 ? `${t.kode} - ${t.nama.slice(0, 28)}…` : t.label,
+    callback_data: `t|${draftId}|${t.kode}`,
+  }));
+  const baris = [];
+  for (let i = 0; i < tombol.length; i += 2) baris.push(tombol.slice(i, i + 2));
+  return { inline_keyboard: baris };
 }
 
 async function tanganiTombol(cq, env) {
   const chatId = cq.message && cq.message.chat && cq.message.chat.id;
   if (!grupBoleh(chatId, env)) { await jawabTombol(env, cq.id, 'Grup tidak diizinkan'); return; }
 
-  const [tag, id, status] = String(cq.data || '').split('|');
-  if (tag !== 's' || !id) { await jawabTombol(env, cq.id, ''); return; }
+  const [tag, draftId, nilai] = String(cq.data || '').split('|');
+  if (!draftId) { await jawabTombol(env, cq.id, ''); return; }
 
   try {
-    const token = await masukFirebase(env);
-    await ubahStatus(env, token, id, status || '');
-    await jawabTombol(env, cq.id, 'Tersimpan: ' + labelStatus(status));
-
-    const asli = String(cq.message.text || '').split('\n\nSudah tersimpan')[0];
-    await sunting(env, chatId, cq.message.message_id,
-      asli + `\n\n✅ Tersimpan di aplikasi — status: <b>${labelStatus(status)}</b>`);
+    if (tag === 'c') await pilihCabang(cq, env, draftId, nilai);
+    else if (tag === 't') await pilihTransaksi(cq, env, draftId, nilai);
+    else await jawabTombol(env, cq.id, '');
   } catch (e) {
-    console.error('status telegram:', e && e.stack);
-    await jawabTombol(env, cq.id, 'Gagal menyimpan status');
-    await kirim(env, chatId, '⚠️ Status gagal diubah.\n' + kodeAman(e), cq.message.message_id);
+    console.error('tombol telegram:', e && e.stack);
+    await jawabTombol(env, cq.id, 'Gagal');
+    await kirim(env, chatId, '⚠️ Gagal memproses tombol.\n' + kodeAman(e), cq.message.message_id);
   }
+}
+
+/* Tombol cabang ditekan → simpan cabangnya di draft, lalu langsung
+   ambilkan Transaction List dari intajo (perlu login + buka halaman
+   Journal Create, jadi terasa beberapa detik — pesannya disunting dua
+   kali supaya jeda itu tidak terasa seperti macet). */
+async function pilihCabang(cq, env, draftId, cabangKey) {
+  const chatId = cq.message.chat.id;
+  if (!CABANG[cabangKey]) { await jawabTombol(env, cq.id, 'Cabang tidak dikenal'); return; }
+
+  const token = await masukFirebase(env);
+  await ubahDraft(env, token, draftId, { cabang: s(cabangKey) });
+  await jawabTombol(env, cq.id, 'Cabang: ' + CABANG[cabangKey].nama);
+
+  const asli = String(cq.message.text || '').split('\n\nTersimpan sebagai draft jurnal.')[0];
+  await sunting(env, chatId, cq.message.message_id,
+    asli + `\n\nCabang: <b>${CABANG[cabangKey].nama}</b>. Mengambil transaction list dari intajo…`);
+
+  const { transaksi } = await ambilDaftarTransaksi(env.INTAJO_EMAIL, env.INTAJO_PASSWORD, cabangKey);
+  await sunting(env, chatId, cq.message.message_id,
+    asli + `\n\nCabang: <b>${CABANG[cabangKey].nama}</b>. Pilih transaksinya:`,
+    tombolTransaksi(draftId, transaksi));
+}
+
+/* Tombol transaksi ditekan → cari lagi value lengkapnya dari Transaction
+   List (kode saja tidak cukup buat mengisi field "transaksi" draft —
+   lihat catatan di tombolTransaksi tentang batas 64 byte). */
+async function pilihTransaksi(cq, env, draftId, kode) {
+  const chatId = cq.message.chat.id;
+  const token = await masukFirebase(env);
+  const draft = await bacaDraft(env, token, draftId);
+  if (!draft || !draft.cabang) { await jawabTombol(env, cq.id, 'Draft/cabang belum ada'); return; }
+
+  const { transaksi } = await ambilDaftarTransaksi(env.INTAJO_EMAIL, env.INTAJO_PASSWORD, draft.cabang);
+  const cocok = transaksi.find((t) => t.kode === kode);
+  if (!cocok) { await jawabTombol(env, cq.id, 'Transaksi tidak ditemukan lagi'); return; }
+
+  await ubahDraft(env, token, draftId, { transaksi: s(cocok.value) });
+  await jawabTombol(env, cq.id, 'Tersimpan: ' + kode);
+
+  const asli = String(cq.message.text || '').split('\n\nCabang:')[0];
+  await sunting(env, chatId, cq.message.message_id,
+    asli + `\n\n✅ Cabang: <b>${CABANG[draft.cabang].nama}</b> · Transaksi: <b>${lolos(cocok.label)}</b>.\n` +
+    'Buka aplikasi (tab Jurnal) untuk isi ledger &amp; kirim ke intajo.');
 }
 
 /* -------------------------------- Ringkasan -------------------------------- */
@@ -300,10 +354,8 @@ async function buatNota(env, token, n) {
         kategori: s(n.kategori),
         metode:   s(n.metode),
         catatan:  s(n.catatan),
-        status:   s(n.status || ''),
         sumber:   s('telegram'),
         foto:     s(n.foto),
-        arsip:    { booleanValue: false },
         dibuat:   i(Date.now()),
         items: {
           arrayValue: {
@@ -325,18 +377,70 @@ async function buatNota(env, token, n) {
   return String(j.name || '').split('/').pop();
 }
 
-async function ubahStatus(env, token, id, status) {
-  const url = `${pangkalan(env)}/${encodeURIComponent(id)}` +
-    '?updateMask.fieldPaths=status&updateMask.fieldPaths=diubah';
-  const res = await fetch(url, {
+const pangkalanDraft = (env) =>
+  `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}` +
+  `/databases/(default)/documents/klinik/${KLINIK_ID}/jurnalDraft`;
+
+/* Cangkang draft jurnal — SAMA PERSIS bentuknya dengan yang dibuat
+   js/jurnal.js untuk preset & catat-manual, supaya kartu draft dari
+   Telegram tidak perlu penanganan khusus di sisi aplikasi. Baris & ledger
+   sengaja kosong: itu tetap diisi pemilik sendiri di tab Jurnal — bot
+   cuma membantu sampai tahap cabang + kode transaksi. */
+async function buatDraftJurnal(env, token, notaId, n) {
+  const res = await fetch(pangkalanDraft(env), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({
+      fields: {
+        notaId: s(notaId),
+        nama: s(n.toko ? `${n.toko} — ${rupiah(n.total)}` : rupiah(n.total)),
+        tanggal: s(n.tanggal || hariIni()),
+        cabang: s(''), transaksi: s(''),
+        baris: { arrayValue: { values: [] } },
+        sumberNota: {
+          mapValue: {
+            fields: {
+              tanggal: s(n.tanggal), toko: s(n.toko), total: i(n.total),
+              kategori: s(n.kategori), metode: s(n.metode), catatan: s(n.catatan),
+            },
+          },
+        },
+        dibuat: i(Date.now()),
+      },
+    }),
+  });
+  const j = await res.json();
+  if (!res.ok) throw new Error('Buat draft jurnal gagal: ' + ((j.error && j.error.message) || res.status));
+  return String(j.name || '').split('/').pop();
+}
+
+/* Timpa field tertentu saja di draft (cabang lalu transaksi, dua langkah
+   terpisah sesuai urutan tombol yang ditekan pemilik). */
+async function ubahDraft(env, token, draftId, fields) {
+  const mask = Object.keys(fields).map((k) => `updateMask.fieldPaths=${encodeURIComponent(k)}`).join('&');
+  const res = await fetch(`${pangkalanDraft(env)}/${encodeURIComponent(draftId)}?${mask}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-    body: JSON.stringify({ fields: { status: s(status), diubah: i(Date.now()) } }),
+    body: JSON.stringify({ fields }),
   });
   if (!res.ok) {
     const j = await res.json().catch(() => ({}));
-    throw new Error('Ubah status gagal: ' + ((j.error && j.error.message) || res.status));
+    throw new Error('Ubah draft gagal: ' + ((j.error && j.error.message) || res.status));
   }
+}
+
+/* Dibaca saat tombol transaksi ditekan — perlu tahu cabang yang sudah
+   disimpan di langkah sebelumnya untuk mengambil Transaction List yang
+   benar (lihat pilihTransaksi()). */
+async function bacaDraft(env, token, draftId) {
+  const res = await fetch(`${pangkalanDraft(env)}/${encodeURIComponent(draftId)}`, {
+    headers: { Authorization: 'Bearer ' + token },
+  });
+  if (!res.ok) return null;
+  const j = await res.json();
+  const f = j.fields || {};
+  const str = (v) => (v && 'stringValue' in v ? v.stringValue : '');
+  return { cabang: str(f.cabang), transaksi: str(f.transaksi) };
 }
 
 const s = (v) => ({ stringValue: String(v == null ? '' : v) });

@@ -1,9 +1,9 @@
 /* =========================================================================
    functions/_lib/gemini.js — pembacaan foto nota oleh AI
    -------------------------------------------------------------------------
-   Dipakai bersama oleh dua endpoint:
-     • functions/api/nota.js      → tombol "Unggah nota" di aplikasi
-     • functions/api/telegram.js  → foto yang di-forward ke grup Telegram
+   Dipakai oleh functions/api/telegram.js — satu-satunya jalan nota masuk
+   sekarang (tombol "Unggah nota" di aplikasi sudah dihapus bersama tab
+   Nota, lihat catatan di js/jurnal.js).
 
    Kuncinya (GEMINI_API_KEY) hanya ada di sini — di server Cloudflare —
    sehingga tidak pernah ikut terkirim ke browser atau ke Telegram.

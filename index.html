@@ -17,115 +17,64 @@
 
 <div class="app">
 
-  <!-- ============ NAVIGASI: tab bar di HP, sidebar di desktop ============ -->
+  <!-- ============ NAVIGASI: tab bar di HP, sidebar di desktop ============
+       Cuma 4 tab utama — cukup untuk tab bar HP tanpa perlu sheet
+       "Lainnya" lagi. Chat & Kelola pindah jadi tombol ikon di topbar
+       (lihat .topbar-actions), bukan tab di sini. -->
   <nav class="tabbar no-print" id="tabs">
     <div class="tabbar-brand">
       <span class="brand-mark">🐾</span>
-      <span class="brand-text"><strong id="brandNama">LOVE Pet Clinic</strong><small>Penggajian</small></span>
+      <span class="brand-text"><strong id="brandNama">LOVE Pet Clinic</strong><small>Management</small></span>
     </div>
 
     <button class="tabitem is-active" data-view="dashboard">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20.2h18M6.5 20V11M12 20V4.5M17.5 20v-6"/></svg>
       <span>Ringkasan</span>
     </button>
-    <button class="tabitem" data-view="input">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.8 3.7a2 2 0 0 1 2.8 2.8L9.4 16.7l-3.6 1 1-3.6z"/><path d="M4 20.5h16"/></svg>
-      <span>Input</span>
-    </button>
-    <button class="tabitem" data-view="slip">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h9l4 4v14.4H6z"/><path d="M15 2.8v4.2h4"/><path d="M9 12h6M9 15.5h6"/></svg>
-      <span>Slip</span>
-    </button>
-    <button class="tabitem" data-view="nota">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 2.8h13v18.4l-2.2-1.5-2.2 1.5-2.1-1.5-2.2 1.5-2.1-1.5-2.2 1.5z"/><path d="M9 7.8h6M9 11.8h6"/></svg>
-      <span>Nota</span>
-      <span class="tab-badge" hidden></span>
-    </button>
-    <button class="tabitem tab-desktop-only" data-view="chat">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4-3.8 7.2-8.5 7.2-1 0-2-.15-2.9-.42L4 20.5l1.4-3.8C4.1 15.4 3.5 13.8 3.5 12c0-4 3.8-7.2 8.5-7.2s8.5 3.2 8.5 7.2z"/></svg>
-      <span>Chat</span>
-      <span class="tab-badge" hidden></span>
-    </button>
-    <button class="tabitem tab-desktop-only" data-view="tahunan">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
-      <span>Rekap</span>
-    </button>
-    <button class="tabitem tab-desktop-only" data-view="neraca">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v17M5 8.5h14"/><path d="M5 8.5 2.5 14h5zM19 8.5 16.5 14h5z"/></svg>
-      <span>Neraca</span>
-    </button>
-    <button class="tabitem tab-desktop-only" data-view="jurnal">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h11l3.5 3.5v13.5H5z"/><path d="M8.5 9.5h7M8.5 13h7M8.5 16.5h4"/></svg>
-      <span>Jurnal</span>
-    </button>
-    <button class="tabitem tab-desktop-only" data-view="kasbon">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
-      <span>Kasbon</span>
-      <span class="tab-badge" hidden></span>
-    </button>
-    <button class="tabitem tab-desktop-only" data-view="kelola">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
-      <span>Kelola</span>
-    </button>
-
-    <button class="tabitem mobile-only" id="tabMore" aria-haspopup="true" aria-expanded="false">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-      <span>Lainnya</span>
-      <span class="tab-badge" id="moreBadge" hidden></span>
-    </button>
-
-    <div class="tabbar-foot">
-      <span class="cloud-status" id="cloudStatus" hidden></span>
-      <button class="icon-btn" id="themeToggle" title="Ganti tema" aria-label="Ganti tema">◐</button>
-    </div>
-  </nav>
-
-  <!-- ============ SHEET "LAINNYA": tampung tab yang tak muat di HP ============ -->
-  <div class="more-sheet-backdrop no-print" id="moreBackdrop" hidden></div>
-  <div class="more-sheet no-print" id="moreSheet" hidden>
-    <div class="more-sheet-handle"></div>
-    <button class="tabitem" data-view="chat">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4-3.8 7.2-8.5 7.2-1 0-2-.15-2.9-.42L4 20.5l1.4-3.8C4.1 15.4 3.5 13.8 3.5 12c0-4 3.8-7.2 8.5-7.2s8.5 3.2 8.5 7.2z"/></svg>
-      <span>Chat</span>
-      <span class="tab-badge" hidden></span>
-    </button>
-    <button class="tabitem" data-view="tahunan">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="4.5" width="17.6" height="16.3" rx="2.6"/><path d="M3.2 9.2h17.6M8 2.8v3.4M16 2.8v3.4"/></svg>
-      <span>Rekap</span>
-    </button>
-    <button class="tabitem" data-view="neraca">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v17M5 8.5h14"/><path d="M5 8.5 2.5 14h5zM19 8.5 16.5 14h5z"/></svg>
-      <span>Neraca</span>
-    </button>
     <button class="tabitem" data-view="jurnal">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5h11l3.5 3.5v13.5H5z"/><path d="M8.5 9.5h7M8.5 13h7M8.5 16.5h4"/></svg>
       <span>Jurnal</span>
+    </button>
+    <button class="tabitem" data-view="gaji">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h9l4 4v14.4H6z"/><path d="M15 2.8v4.2h4"/><path d="M9 12h6M9 15.5h6"/></svg>
+      <span>Gaji/Bonus</span>
     </button>
     <button class="tabitem" data-view="kasbon">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
       <span>Kasbon</span>
       <span class="tab-badge" hidden></span>
     </button>
-    <button class="tabitem" data-view="kelola">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
-      <span>Kelola</span>
-    </button>
-  </div>
+
+    <div class="tabbar-foot">
+      <span class="cloud-status" id="cloudStatus" hidden></span>
+    </div>
+  </nav>
 
   <div class="content">
 
-    <!-- ============ HEADER ============ -->
+    <!-- ============ HEADER ============
+         Urutan tombol sengaja: Chat -- tema -- Setting -- dropdown bulan.
+         Chat & Setting (dulu tab "Kelola") tinggal di sini sebagai ikon,
+         bukan tab lagi — cuma dua yang jarang dipakai sehari-hari
+         dibanding 4 tab utama di nav. -->
     <header class="topbar no-print">
       <div class="brand mobile-only">
         <span class="brand-mark">🐾</span>
-        <span class="brand-text"><strong id="brandNamaHp">LOVE Pet Clinic</strong><small>Penggajian &amp; Slip Gaji</small></span>
+        <span class="brand-text"><strong id="brandNamaHp">LOVE Pet Clinic</strong><small>Management</small></span>
       </div>
       <div class="topbar-actions">
+        <button class="icon-btn" id="btnChat" data-view="chat" title="Chat karyawan" aria-label="Chat karyawan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12c0 4-3.8 7.2-8.5 7.2-1 0-2-.15-2.9-.42L4 20.5l1.4-3.8C4.1 15.4 3.5 13.8 3.5 12c0-4 3.8-7.2 8.5-7.2s8.5 3.2 8.5 7.2z"/></svg>
+          <span class="tab-badge" hidden></span>
+        </button>
+        <button class="icon-btn" id="themeToggle" title="Ganti tema" aria-label="Ganti tema">◐</button>
+        <button class="icon-btn" id="btnSetting" data-view="kelola" title="Setting" aria-label="Setting">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
+        </button>
         <label class="period-picker">
           <span class="sr-only">Periode</span>
           <select id="periodeSelect"></select>
         </label>
-        <button class="icon-btn desktop-hide" id="themeToggleHp" title="Ganti tema" aria-label="Ganti tema">◐</button>
       </div>
     </header>
 
@@ -192,12 +141,20 @@
         </div>
       </section>
 
-      <!-- ====================== INPUT GAJI ====================== -->
-      <section class="view" id="view-input">
+      <!-- ====================== GAJI/BONUS (Input + Slip + Rekap) ====================== -->
+      <section class="view" id="view-gaji">
         <div class="page-head">
-          <h1>Input Gaji</h1>
-          <p class="muted">Isi jumlah performanya saja — gaji dihitung &amp; tersimpan otomatis.</p>
+          <h1>Gaji/Bonus</h1>
         </div>
+
+        <div class="segmented" id="segGaji" role="tablist">
+          <button class="seg is-active" data-seg="input" role="tab">Input</button>
+          <button class="seg" data-seg="slip" role="tab">Slip</button>
+          <button class="seg" data-seg="tahunan" role="tab">Rekap</button>
+        </div>
+
+        <div id="gajiPaneInput" class="segpane is-active">
+        <p class="muted">Isi jumlah performanya saja — gaji dihitung &amp; tersimpan otomatis.</p>
 
         <div class="segmented" id="segInput" role="tablist">
           <button class="seg is-active" data-seg="performa" role="tab">Performa</button>
@@ -232,14 +189,10 @@
           <span>Total dibayarkan bulan ini</span>
           <strong id="inputTotal">Rp 0</strong>
         </div>
-      </section>
-
-      <!-- ====================== SLIP GAJI ====================== -->
-      <section class="view" id="view-slip">
-        <div class="page-head no-print">
-          <h1>Slip Gaji</h1>
-          <p class="muted">Pilih karyawan, lalu setujui agar ia bisa mengunduhnya sendiri — atau cetak di sini.</p>
         </div>
+
+        <div id="gajiPaneSlip" class="segpane">
+        <p class="muted no-print">Pilih karyawan, lalu setujui agar ia bisa mengunduhnya sendiri — atau cetak di sini.</p>
 
         <div class="toolbar no-print">
           <label class="field inline seg-select">
@@ -259,83 +212,10 @@
         </div>
 
         <div id="slipArea"></div>
-      </section>
-
-      <!-- ====================== CHAT KARYAWAN ====================== -->
-      <section class="view" id="view-chat">
-        <div class="page-head chat-hanya-daftar">
-          <h1>Chat Karyawan</h1>
-          <p class="muted">Percakapan pribadi dengan tiap karyawan — pertanyaan, permintaan revisi slip, pengumuman.</p>
         </div>
 
-        <div id="chatKosong" class="chat-hanya-daftar"></div>
-        <div id="chatDaftar" class="chat-daftar chat-hanya-daftar"></div>
-
-        <!-- Ruang percakapan: menggantikan daftar saat sebuah nama dibuka -->
-        <div class="chat-ruang">
-          <header class="chat-kepala">
-            <button type="button" class="chat-kembali" id="chatKembali" aria-label="Kembali ke daftar">‹</button>
-            <span class="chat-avatar" id="chatAvatarBesar"></span>
-            <span class="chat-kepala-teks">
-              <strong id="chatJudulNama">—</strong>
-              <small id="chatJudulRole"></small>
-            </span>
-          </header>
-
-          <div class="chat-pesan" id="chatPesan"></div>
-
-          <form class="chat-tulis" id="chatForm">
-            <textarea id="chatInput" rows="1" placeholder="Tulis pesan…" autocomplete="off"></textarea>
-            <button type="submit" class="chat-kirim" aria-label="Kirim">➤</button>
-          </form>
-        </div>
-      </section>
-
-      <!-- ====================== NOTA / PENGELUARAN ====================== -->
-      <section class="view" id="view-nota">
-        <div class="page-head">
-          <h1>Pengeluaran</h1>
-          <p class="muted">Unggah foto nota — AI mencatatkan isinya. Ketuk baris untuk melihat rinciannya.</p>
-        </div>
-
-        <div class="nota-banner" id="notaArsip" hidden></div>
-
-        <div class="stat-row" id="notaStat"></div>
-
-        <div class="toolbar no-print">
-          <button class="btn btn-primary" id="btnUnggahNota">Unggah nota</button>
-          <input type="file" id="notaFile" accept="image/*" capture="environment" hidden>
-          <button class="btn" id="btnNotaManual">Catat manual</button>
-          <button class="btn" id="btnCetakNota">Cetak / PDF</button>
-          <span class="grow"></span>
-          <span class="nota-sibuk" id="notaSibuk" hidden></span>
-        </div>
-
-        <div class="toolbar no-print">
-          <label class="field inline seg-select"><span>Bulan</span>
-            <select id="notaPeriode"><option value="semua">Semua bulan</option></select>
-          </label>
-          <label class="field inline seg-select"><span>Status</span>
-            <select id="notaStatus">
-              <option value="semua">Semua status</option>
-              <option value="">Kosong</option>
-              <option value="belum">Belum kirim Risa</option>
-              <option value="terkirim">Terkirim ke Risa</option>
-              <option value="tahan">Untuk ditahan</option>
-            </select>
-          </label>
-        </div>
-
-        <div id="notaKosong"></div>
-        <div id="notaList" class="nota-list"></div>
-      </section>
-
-      <!-- ====================== REKAP TAHUNAN ====================== -->
-      <section class="view" id="view-tahunan">
-        <div class="page-head">
-          <h1>Rekap <span id="tahunChip" class="chip"></span></h1>
-          <p class="muted">Total pengeluaran gaji sepanjang tahun.</p>
-        </div>
+        <div id="gajiPaneTahunan" class="segpane">
+        <p class="muted">Rekap <span id="tahunChip" class="chip"></span> — total pengeluaran gaji sepanjang tahun.</p>
 
         <div class="stat-row" id="statTahun"></div>
 
@@ -365,15 +245,79 @@
           </div>
           <div id="chartTren" class="chart-wrap"></div>
         </div>
+        </div>
       </section>
 
-      <!-- ====================== KASBON ====================== -->
-      <!-- ====================== LAPORAN NERACA ====================== -->
-      <section class="view" id="view-neraca">
+      <!-- ====================== JURNAL (Jurnal + Neraca) ====================== -->
+      <section class="view" id="view-jurnal">
         <div class="page-head">
-          <h1>Laporan Neraca</h1>
-          <p class="muted">Posisi keuangan dari intajo.com — Manado, Tomohon &amp; gabungan keduanya, berdampingan.</p>
+          <h1>Jurnal</h1>
         </div>
+
+        <div class="segmented" id="segJurnalMenu" role="tablist">
+          <button class="seg is-active" data-seg="jurnal" role="tab">Jurnal</button>
+          <button class="seg" data-seg="neraca" role="tab">Neraca</button>
+        </div>
+
+        <div id="jurnalPaneJurnal" class="segpane is-active">
+
+        <p class="muted">Mencatat pengeluaran ke intajo.com &mdash; dari nota yang masuk lewat Telegram, atau langsung. Transaction list tetap yang Anda pilih sendiri, sama seperti di intajo.</p>
+
+        <!-- Draft yang lahir otomatis dari tiap nota yang masuk lewat
+             Telegram (lihat functions/api/telegram.js) — dibuang begitu
+             diedit & dikirim, jadi kartu di sini bukan riwayat, cuma
+             pekerjaan yang menunggu. -->
+        <div class="card" id="cardDraftJurnal" hidden>
+          <div class="card-head">
+            <h2>Draft dari Nota</h2>
+            <p class="muted">Setiap nota yang masuk lewat Telegram langsung muncul di sini &mdash; tidak perlu ditandai apa-apa dulu.</p>
+          </div>
+          <div id="jurnalDraftList"></div>
+        </div>
+
+        <!-- Inti fitur: transaksi yang itu-itu lagi tiap bulan, disimpan
+             sekali lalu tinggal dikirim. -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Jurnal rutin</h2>
+            <div class="jurnal-head-aksi">
+              <button class="btn ghost" id="btnCatatManual" type="button">+ Catat sekali</button>
+              <button class="btn ghost" id="btnTambahPreset" type="button">+ Preset baru</button>
+            </div>
+          </div>
+          <div id="jurnalPreset"><p class="muted">Memuat&hellip;</p></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Riwayat kiriman</h2>
+            <p class="muted" id="jurnalRiwayatKet">Yang tercatat di sini hanya kiriman dari aplikasi ini. Pembukuan sungguhan tetap di intajo.</p>
+          </div>
+          <div id="jurnalRiwayat"><p class="muted">Memuat&hellip;</p></div>
+        </div>
+
+        <!-- Alat bedah: dipakai sekali untuk mengenali formulir Journal
+             Create intajo (nama field + isi transaction list). Murni GET. -->
+        <details class="card" id="cardTelusur">
+          <summary><strong>Telusuri formulir intajo</strong> &mdash; alat bantu, hanya membaca</summary>
+          <div class="card-head">
+            <label class="period-picker">
+              <span class="sr-only">Cabang</span>
+              <select id="jurnalCabang">
+                <option value="manado">Manado</option>
+                <option value="tomohon">Tomohon</option>
+              </select>
+            </label>
+            <button class="btn ghost" id="btnTelusuriJurnal" type="button">Telusuri sekarang</button>
+            <button class="btn ghost" id="btnSalinTelusur" type="button" hidden>Salin hasil</button>
+          </div>
+          <div id="jurnalHasil"><p class="muted">Belum ditelusuri.</p></div>
+        </details>
+              </div>
+
+        <div id="jurnalPaneNeraca" class="segpane">
+
+        <p class="muted">Posisi keuangan dari intajo.com — Manado, Tomohon &amp; gabungan keduanya, berdampingan.</p>
 
         <div class="card">
           <div class="card-head">
@@ -398,57 +342,12 @@
         </div>
 
         <div id="neracaKolom"></div>
+              </div>
       </section>
 
-      <!-- Popup detail neraca (Begin/Debit/Credit/Total per cabang). Diisi
-           lewat JS, sama seperti #notaDialog — kosong sampai dibuka. -->
+      <!-- Popup detail neraca (Begin/Debit/Credit/Total per cabang) & popup
+           preset/kirim jurnal. Diisi lewat JS — kosong sampai dibuka. -->
       <div class="neraca-dialog no-print" id="neracaDialog" hidden></div>
-
-      <!-- ====================== JURNAL ====================== -->
-      <section class="view" id="view-jurnal">
-        <div class="page-head">
-          <h1>Jurnal</h1>
-          <p class="muted">Mencatat pengeluaran rutin ke intajo.com dengan satu ketukan &mdash; transaction list tetap yang Anda pilih sendiri, sama seperti di intajo.</p>
-        </div>
-
-        <!-- Inti fitur: transaksi yang itu-itu lagi tiap bulan, disimpan
-             sekali lalu tinggal dikirim. -->
-        <div class="card">
-          <div class="card-head">
-            <h2>Jurnal rutin</h2>
-            <button class="btn ghost" id="btnTambahPreset" type="button">+ Preset baru</button>
-          </div>
-          <div id="jurnalPreset"><p class="muted">Memuat&hellip;</p></div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h2>Riwayat kiriman</h2>
-            <p class="muted">Yang tercatat di sini hanya kiriman dari aplikasi ini. Pembukuan sungguhan tetap di intajo.</p>
-          </div>
-          <div id="jurnalRiwayat"><p class="muted">Memuat&hellip;</p></div>
-        </div>
-
-        <!-- Alat bedah: dipakai sekali untuk mengenali formulir Journal
-             Create intajo (nama field + isi transaction list). Murni GET. -->
-        <details class="card" id="cardTelusur">
-          <summary><strong>Telusuri formulir intajo</strong> &mdash; alat bantu, hanya membaca</summary>
-          <div class="card-head">
-            <label class="period-picker">
-              <span class="sr-only">Cabang</span>
-              <select id="jurnalCabang">
-                <option value="manado">Manado</option>
-                <option value="tomohon">Tomohon</option>
-              </select>
-            </label>
-            <button class="btn ghost" id="btnTelusuriJurnal" type="button">Telusuri sekarang</button>
-            <button class="btn ghost" id="btnSalinTelusur" type="button" hidden>Salin hasil</button>
-          </div>
-          <div id="jurnalHasil"><p class="muted">Belum ditelusuri.</p></div>
-        </details>
-      </section>
-
-      <!-- Popup: sunting preset & kirim jurnal. Diisi lewat JS. -->
       <div class="neraca-dialog no-print" id="jurnalDialog" hidden></div>
 
       <section class="view" id="view-kasbon">
@@ -472,6 +371,36 @@
         <div class="card">
           <div class="card-head"><h2>Riwayat Selesai / Ditolak</h2></div>
           <div id="kasbonRiwayatList" class="table-scroll"></div>
+        </div>
+      </section>
+
+      <!-- ====================== CHAT KARYAWAN ====================== -->
+      <section class="view" id="view-chat">
+        <div class="page-head chat-hanya-daftar">
+          <h1>Chat Karyawan</h1>
+          <p class="muted">Percakapan pribadi dengan tiap karyawan — pertanyaan, permintaan revisi slip, pengumuman.</p>
+        </div>
+
+        <div id="chatKosong" class="chat-hanya-daftar"></div>
+        <div id="chatDaftar" class="chat-daftar chat-hanya-daftar"></div>
+
+        <!-- Ruang percakapan: menggantikan daftar saat sebuah nama dibuka -->
+        <div class="chat-ruang">
+          <header class="chat-kepala">
+            <button type="button" class="chat-kembali" id="chatKembali" aria-label="Kembali ke daftar">‹</button>
+            <span class="chat-avatar" id="chatAvatarBesar"></span>
+            <span class="chat-kepala-teks">
+              <strong id="chatJudulNama">—</strong>
+              <small id="chatJudulRole"></small>
+            </span>
+          </header>
+
+          <div class="chat-pesan" id="chatPesan"></div>
+
+          <form class="chat-tulis" id="chatForm">
+            <textarea id="chatInput" rows="1" placeholder="Tulis pesan…" autocomplete="off"></textarea>
+            <button type="submit" class="chat-kirim" aria-label="Kirim">➤</button>
+          </form>
         </div>
       </section>
 
@@ -575,7 +504,6 @@
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div id="printArea" class="print-only"></div>
-<div class="nota-dialog no-print" id="notaDialog" hidden></div>
 
 <script src="js/firebase-config.js"></script>
 <script src="js/data.js"></script>
@@ -583,7 +511,6 @@
 <script src="js/app.js"></script>
 <script type="module" src="js/cloud.js"></script>
 <script type="module" src="js/provisioning.js"></script>
-<script type="module" src="js/nota.js"></script>
 <script type="module" src="js/slip-terbit.js"></script>
 <script type="module" src="js/kasbon.js"></script>
 <script type="module" src="js/neraca.js"></script>

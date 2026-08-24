@@ -114,38 +114,6 @@ main {
 .tabitem.is-active svg { stroke-width: 2.1; }
 .tabitem:active { opacity: .55; }
 
-/* Tab yang di HP disembunyikan ke dalam sheet "Lainnya", tapi tetap tampil
-   penuh di sidebar desktop (lihat override di media (min-width: 900px)). */
-.tab-desktop-only { display: none; }
-
-/* --- HP: sheet "Lainnya" (bottom sheet) untuk tab yang tak muat di tab bar --- */
-.more-sheet-backdrop {
-  position: fixed; inset: 0; z-index: 59;
-  background: rgba(0,0,0,.32);
-}
-.more-sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-  display: flex; flex-direction: column; gap: 2px;
-  padding: 8px 10px calc(env(safe-area-inset-bottom) + 14px);
-  background: var(--surface-1);
-  border-top: 1px solid var(--border);
-  border-radius: 18px 18px 0 0;
-  box-shadow: 0 -8px 30px rgba(0,0,0,.12);
-}
-.more-sheet-handle {
-  width: 36px; height: 4px; border-radius: 3px; margin: 4px auto 8px;
-  background: var(--border-strong);
-}
-.more-sheet .tabitem {
-  flex-direction: row; justify-content: flex-start; gap: 12px;
-  padding: 12px 10px; border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-}
-.more-sheet .tabitem svg { width: 22px; height: 22px; }
-.more-sheet .tabitem span { font-size: .92rem; }
-.more-sheet .tabitem.is-active { background: var(--brand-soft); color: var(--brand-ink); }
-.more-sheet[hidden], .more-sheet-backdrop[hidden] { display: none; }
-
 /* --- Desktop: sidebar kiri --- */
 @media (min-width: 900px) {
   :root { --tabbar-h: 0px; }
@@ -179,8 +147,6 @@ main {
   .tabitem.is-active svg { stroke-width: 1.9; }
   .tabbar-foot { display: block; margin-top: auto; padding: 8px; }
   .mobile-only { display: none !important; }
-  .tab-desktop-only { display: flex; }
-  .more-sheet, .more-sheet-backdrop { display: none !important; }
 }
 
 /* ========================= TOPBAR ========================= */
@@ -228,10 +194,18 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 .period-picker select { font-weight: 600; font-size: 15px; max-width: 165px; }
 
 .icon-btn {
-  width: 38px; height: 38px; border-radius: 10px; flex: none;
+  position: relative; width: 38px; height: 38px; border-radius: 10px; flex: none;
+  display: grid; place-items: center;
   border: 1px solid var(--border-strong); background: var(--surface-1);
   color: var(--text-secondary); font-size: 15px; cursor: pointer;
 }
+.icon-btn svg {
+  width: 19px; height: 19px; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+/* Dipakai tombol Chat & Setting di topbar (dulu tab tersendiri) supaya
+   tetap kelihatan "sedang terbuka" seperti tab biasa. */
+.icon-btn.is-active { background: var(--brand-soft); color: var(--brand-ink); border-color: var(--brand); }
 
 /* ========================= HALAMAN ========================= */
 .view { display: none; }
@@ -631,7 +605,6 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 @media (max-width: 899px) {
   .tabbar-foot { display: block; position: fixed; left: 0; right: 0;
     bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding: 0; pointer-events: none; }
-  .tabbar-foot .icon-btn { display: none; }
   .cloud-status { margin: 0; border-radius: 0; text-align: center; font-size: .64rem; padding: 3px 8px;
     background: color-mix(in srgb, var(--surface-2) 92%, transparent); }
 }
@@ -695,7 +668,7 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
    diketuk. Di kertas (@media print) semua rincian selalu ikut tercetak.
    ========================================================================= */
 
-/* Lencana kecil di tab "Nota" — memberi tahu ada foto menunggu diarsipkan */
+/* Lencana kecil di tab (mis. Chat/Kasbon) — memberi tahu ada yang perlu dilihat */
 .tabitem { position: relative; }
 .tab-badge {
   position: absolute; top: 2px; left: 50%; margin-left: 6px;
@@ -705,138 +678,6 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
   font-size: .6rem !important; font-weight: 700; line-height: 1;
 }
 .tab-badge[hidden] { display: none; }   /* display:flex di atas mengalahkan [hidden] */
-
-.nota-banner {
-  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
-  background: var(--brand-soft); border: 1px solid var(--brand);
-  border-radius: var(--radius); padding: 13px 15px; margin-bottom: 14px;
-}
-.nota-banner > div { flex: 1; min-width: 220px; }
-.nota-banner p { margin: 3px 0 0; font-size: .82rem; }
-.nota-banner code { font-size: .8em; }
-
-.nota-sibuk { font-size: .78rem; color: var(--text-secondary); }
-
-.nota-list { display: flex; flex-direction: column; gap: 8px; }
-
-.nota-row {
-  background: var(--surface-1); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); overflow: hidden;
-}
-.nota-row.is-open { border-color: var(--border-strong); box-shadow: var(--shadow); }
-
-.nota-head {
-  width: 100%; display: grid; align-items: center; gap: 4px 10px;
-  grid-template-columns: auto 1fr auto auto;
-  grid-template-areas: "tgl judul total kar" "tgl status status kar";
-  padding: 11px 13px; border: 0; background: none; cursor: pointer;
-  font: inherit; color: inherit; text-align: left;
-}
-.nota-head:active { background: var(--surface-2); }
-.nota-tgl {
-  grid-area: tgl; font-size: .72rem; font-weight: 600; color: var(--text-muted);
-  width: 4.6em; line-height: 1.25;
-}
-.nota-judul { grid-area: judul; min-width: 0; display: block; }
-.nota-judul strong {
-  display: block; font-size: .95rem; letter-spacing: -.012em;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.nota-judul small { display: block; font-size: .74rem; color: var(--text-muted); }
-.nota-total { grid-area: total; font-weight: 700; font-size: .92rem; white-space: nowrap; }
-.nota-kar {
-  grid-area: kar; color: var(--text-muted); font-size: 1.15rem;
-  transition: transform .18s;
-}
-.nota-row.is-open .nota-kar { transform: rotate(90deg); }
-
-.nota-status {
-  grid-area: status; justify-self: start;
-  font-size: .68rem; font-weight: 650; padding: 2px 8px; border-radius: 999px;
-  border: 1px solid transparent; white-space: nowrap;
-}
-.nota-status.s-abu    { background: var(--surface-2); color: var(--text-muted); }
-.nota-status.s-kuning { background: color-mix(in srgb, var(--series-2) 16%, transparent); color: var(--series-2); }
-.nota-status.s-hijau  { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
-.nota-status.s-merah  { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
-
-.nota-detail { padding: 0 13px 13px; border-top: 1px solid var(--border); }
-.nota-detail > *:first-child { margin-top: 11px; }
-/* Berbeda dari .tbl biasa: rincian nota harus muat di layar HP tanpa
-   digeser, jadi min-width dilepas dan nama barang boleh turun baris. */
-.nota-items { font-size: .8rem; min-width: 0; }
-.nota-items th, .nota-items td { padding: 6px 7px; }
-.nota-items th:first-child, .nota-items td:first-child { white-space: normal; }
-.nota-items .ka { text-align: right; white-space: nowrap; }
-
-.nota-meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 11px 0; }
-.nota-meta dt { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
-.nota-meta dd { margin: 1px 0 0; font-size: .85rem; }
-
-.nota-foto { display: block; max-width: 260px; }
-.nota-foto img {
-  width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border);
-}
-.nota-aksi { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
-.nota-aksi .field.inline span { font-size: .75rem; color: var(--text-muted); }
-
-/* --- Dialog periksa hasil AI / ubah nota --- */
-.nota-dialog {
-  position: fixed; inset: 0; z-index: 60; overflow-y: auto;
-  background: rgba(0,0,0,.45); padding: 18px;
-  display: flex; align-items: flex-start; justify-content: center;
-}
-.nota-dialog[hidden] { display: none; }
-.nota-card {
-  background: var(--surface-1); border-radius: var(--radius);
-  padding: 20px; width: min(640px, 100%); box-shadow: var(--shadow);
-  margin: auto;
-}
-.nota-card h2 { margin: 0 0 3px; }
-.nota-card h3 { margin: 0; font-size: .95rem; }
-.nota-card .card-head { margin: 18px 0 8px; padding: 0; }
-.nota-item {
-  display: grid; gap: 6px; align-items: center; margin-bottom: 6px;
-  grid-template-columns: 1fr 3.2em 6em 6em auto;
-}
-.nota-item input {
-  padding: 7px 9px; font-size: .82rem; min-width: 0;
-  border: 1px solid var(--border); border-radius: 9px;
-  background: var(--surface-0); color: var(--text-primary);
-}
-.nota-pratinjau {
-  display: block; max-width: 220px; margin-top: 14px;
-  border-radius: var(--radius-sm); border: 1px solid var(--border);
-}
-.nota-dialog-aksi { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
-
-@media (max-width: 560px) {
-  /* Satu barang jadi blok dua baris: nama + tombol hapus di atas,
-     qty / harga / jumlah di bawahnya. */
-  .nota-item {
-    grid-template-columns: 1fr 1fr 1fr auto;
-    grid-template-areas: "nama nama nama x" "qty harga sub sub";
-    padding-bottom: 8px; margin-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .nota-item:last-child { border-bottom: 0; }
-  .nota-item input:nth-child(1) { grid-area: nama; }
-  .nota-item input:nth-child(2) { grid-area: qty; }
-  .nota-item input:nth-child(3) { grid-area: harga; }
-  .nota-item input:nth-child(4) { grid-area: sub; }
-  .nota-item [data-hapus-item] { grid-area: x; }
-  /* Status mengambil satu baris penuh, Ubah & Hapus berdampingan di bawahnya */
-  .nota-aksi .field.inline { width: 100%; }
-  .nota-aksi .field.inline select { flex: 1; }
-  .nota-aksi .grow { display: none; }
-}
-
-@media print {
-  /* Cetakan nota: rincian barang selalu lengkap, tidak ada yang dilipat */
-  .nota-cetak { width: 100%; margin-bottom: 10px; page-break-inside: avoid; break-inside: avoid; }
-  .nota-cetak th, .nota-cetak td { border: 1px solid #ccc; padding: 3px 6px; text-align: left; }
-  .nota-cetak thead th { background: #f0f0f0; }
-}
 
 /* =========================================================================
    OTORISASI SLIP (tab Slip Gaji, sisi pemilik)
@@ -1011,11 +852,57 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 .jurnal-kartu .jurnal-nominal { font-size: 1.1rem; font-weight: 600; }
 .jurnal-kartu .jurnal-aksi { display: flex; gap: 8px; margin-top: 4px; }
 .jurnal-kartu .jurnal-aksi .btn { flex: 1; }
-.jurnal-dialog-card { width: min(520px, 100%); }
+.jurnal-dialog-card { width: min(640px, 100%); max-height: calc(100vh - 36px); overflow-y: auto; }
 .jurnal-form label { display: block; margin-bottom: 10px; }
 .jurnal-form label > span { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 3px; }
-.jurnal-form input, .jurnal-form select { width: 100%; }
+.jurnal-form input, .jurnal-form select { width: 100%; box-sizing: border-box; }
 .jurnal-kartu .jurnal-status.telat { color: var(--danger, #c0392b); font-weight: 600; }
 .jurnal-jadwal { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 12px; }
 .jurnal-jadwal legend { font-size: .78rem; color: var(--muted); padding: 0 6px; }
 .btn-kecil { padding: 2px 8px; font-size: .74rem; }
+.jurnal-ledger { margin: -4px 0 12px; }
+.jurnal-mentah {
+  max-height: 260px; overflow: auto; font-size: .72rem; line-height: 1.35;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px; white-space: pre-wrap; word-break: break-word;
+}
+.jurnal-baris-tbl { font-size: .8rem; width: 100%; table-layout: fixed; margin-bottom: 10px; }
+.jurnal-baris-tbl col.col-bal { width: 64px; }
+.jurnal-baris-tbl col.col-nom { width: 108px; }
+.jurnal-baris-tbl col.col-x { width: 28px; }
+.jurnal-baris-tbl th, .jurnal-baris-tbl td { padding: 4px 6px; }
+.jurnal-baris-tbl input, .jurnal-baris-tbl select {
+  width: 100%; min-width: 0; box-sizing: border-box; font-size: .8rem;
+}
+.jurnal-baris-tbl td { vertical-align: middle; }
+@media (max-width: 480px) {
+  .jurnal-dialog-card { width: 100%; }
+  .jurnal-baris-tbl { font-size: .74rem; }
+  .jurnal-baris-tbl col.col-nom { width: 84px; }
+}
+
+/* ---- Jurnal: dua tombol di kop kartu Jurnal rutin, dan filter Riwayat ---- */
+.jurnal-head-aksi { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Warna kartu preset: hijau = jatuh temponya masih lama, merah = 5 hari
+   lagi atau sudah lewat. Preset yang selesai/tanpa jadwal tetap netral. */
+.jurnal-kartu-hijau {
+  border-color: color-mix(in srgb, var(--good) 45%, var(--border));
+  background: color-mix(in srgb, var(--good) 7%, var(--surface-2));
+}
+.jurnal-kartu-merah {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  background: color-mix(in srgb, var(--danger) 9%, var(--surface-2));
+}
+
+/* ---- Draft jurnal dari nota "Untuk ditahan" ---- */
+.jurnal-kartu-draft {
+  border-color: color-mix(in srgb, var(--series-2) 45%, var(--border));
+  background: color-mix(in srgb, var(--series-2) 7%, var(--surface-2));
+}
+.jurnal-draft-sumber {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 8px 10px; margin-bottom: 12px; background: var(--surface-2);
+}
+.jurnal-draft-sumber p { margin: 0 0 4px; font-size: .8rem; }
+.jurnal-draft-sumber p:last-child { margin-bottom: 0; }
