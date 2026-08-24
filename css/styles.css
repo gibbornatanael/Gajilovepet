@@ -59,7 +59,13 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; padding: 0; }
+/* overflow-x: hidden di sini adalah JARING PENGAMAN — kalau satu baris
+   (mis. topbar penuh ikon+dropdown) sampai sedikit lebih lebar dari
+   layar, Safari iPhone akan mengecilkan (zoom out) SELURUH halaman
+   supaya baris itu tetap muat, bukan cuma memotong baris itu sendiri.
+   Ini mencegah efek "tampilan iPhone jadi mengecil" itu, apa pun
+   penyebab overflow-nya nanti. */
+html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
 body {
   font-family: var(--font);
   background: var(--surface-0);
@@ -190,8 +196,14 @@ input[type="number"] { text-align: right; }
 select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-visible {
   outline: 2px solid var(--brand); outline-offset: 1px;
 }
-.period-picker { min-width: 0; }
-.period-picker select { font-weight: 600; font-size: 15px; max-width: 165px; }
+.period-picker { min-width: 0; flex-shrink: 1; }
+.period-picker select { font-weight: 600; font-size: 15px; max-width: 165px; min-width: 0; padding-left: 8px; }
+/* Layar sempit (iPhone SE dst.): dropdown bulan/tahun cukup diberi lebih
+   sedikit ruang, cukup untuk mis. "Agu 2026" — nama bulan panjang toh
+   tetap kebaca lewat scroll dropdown-nya sendiri. */
+@media (max-width: 380px) {
+  .period-picker select { max-width: 108px; padding-right: 24px; }
+}
 
 .icon-btn {
   position: relative; width: 38px; height: 38px; border-radius: 10px; flex: none;
@@ -254,6 +266,7 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
   background: var(--surface-2); border-radius: 10px;
 }
 .seg {
+  position: relative;
   flex: 1; padding: 8px 10px; border: 0; border-radius: 8px; cursor: pointer;
   background: transparent; color: var(--text-secondary);
   font: inherit; font-size: .875rem; font-weight: 550;

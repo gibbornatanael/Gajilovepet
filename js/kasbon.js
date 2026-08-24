@@ -59,7 +59,9 @@ function dengarkan() {
 /* ============================ Render ============================ */
 function render() {
   renderLencana();
-  if (!q('#view-kasbon')) return;
+  // Kasbon sekarang sub-tab di dalam Gaji/Bonus (#gajiPaneKasbon), bukan
+  // view tersendiri (#view-kasbon) lagi.
+  if (!q('#gajiPaneKasbon')) return;
   renderStat();
   renderPermintaan();
   renderAktif();
@@ -68,9 +70,11 @@ function render() {
 
 function menunggu() { return permintaan.filter((p) => p.status === 'menunggu'); }
 
+/* Kasbon sekarang tombol .seg di dalam #segGaji, bukan .tabitem lagi —
+   badge-nya menempel di tombol segmented itu (lihat index.html). */
 function renderLencana() {
   const n = menunggu().length;
-  qq('.tabitem[data-view="kasbon"] .tab-badge').forEach((tab) => {
+  qq('#segGaji [data-seg="kasbon"] .tab-badge').forEach((tab) => {
     tab.textContent = n > 99 ? '99+' : String(n);
     tab.hidden = n === 0;
   });

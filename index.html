@@ -18,9 +18,11 @@
 <div class="app">
 
   <!-- ============ NAVIGASI: tab bar di HP, sidebar di desktop ============
-       Cuma 4 tab utama — cukup untuk tab bar HP tanpa perlu sheet
-       "Lainnya" lagi. Chat & Kelola pindah jadi tombol ikon di topbar
-       (lihat .topbar-actions), bukan tab di sini. -->
+       4 tab utama — Kasbon sudah pindah jadi sub-tab di dalam Gaji/Bonus
+       (antara Slip & Rekap), dan Setting (dulu "Kelola") kembali jadi
+       tab di sini, mengisi slot yang ditinggalkan Kasbon. Chat masih
+       tinggal jadi ikon di topbar — satu-satunya yang tersisa di sana,
+       supaya baris ikon+dropdown bulan tidak sesak lagi di iPhone. -->
   <nav class="tabbar no-print" id="tabs">
     <div class="tabbar-brand">
       <span class="brand-mark">🐾</span>
@@ -39,10 +41,9 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h9l4 4v14.4H6z"/><path d="M15 2.8v4.2h4"/><path d="M9 12h6M9 15.5h6"/></svg>
       <span>Gaji/Bonus</span>
     </button>
-    <button class="tabitem" data-view="kasbon">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h16v10H4z"/><circle cx="12" cy="12.5" r="2.6"/><path d="M4 10.2h3M17 14.8h3"/></svg>
-      <span>Kasbon</span>
-      <span class="tab-badge" hidden></span>
+    <button class="tabitem" data-view="kelola">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
+      <span>Setting</span>
     </button>
 
     <div class="tabbar-foot">
@@ -53,10 +54,9 @@
   <div class="content">
 
     <!-- ============ HEADER ============
-         Urutan tombol sengaja: Chat -- tema -- Setting -- dropdown bulan.
-         Chat & Setting (dulu tab "Kelola") tinggal di sini sebagai ikon,
-         bukan tab lagi — cuma dua yang jarang dipakai sehari-hari
-         dibanding 4 tab utama di nav. -->
+         Chat -- tema -- dropdown bulan. Setting sudah balik jadi tab di
+         nav (lihat atas); Chat sendirian yang tinggal di sini sebagai
+         ikon, karena cuma dipakai sesekali dibanding 4 tab utama. -->
     <header class="topbar no-print">
       <div class="brand mobile-only">
         <span class="brand-mark">🐾</span>
@@ -68,9 +68,6 @@
           <span class="tab-badge" hidden></span>
         </button>
         <button class="icon-btn" id="themeToggle" title="Ganti tema" aria-label="Ganti tema">◐</button>
-        <button class="icon-btn" id="btnSetting" data-view="kelola" title="Setting" aria-label="Setting">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
-        </button>
         <label class="period-picker">
           <span class="sr-only">Periode</span>
           <select id="periodeSelect"></select>
@@ -150,6 +147,7 @@
         <div class="segmented" id="segGaji" role="tablist">
           <button class="seg is-active" data-seg="input" role="tab">Input</button>
           <button class="seg" data-seg="slip" role="tab">Slip</button>
+          <button class="seg" data-seg="kasbon" role="tab">Kasbon<span class="tab-badge" hidden></span></button>
           <button class="seg" data-seg="tahunan" role="tab">Rekap</button>
         </div>
 
@@ -213,6 +211,28 @@
 
         <div id="slipArea"></div>
         </div>
+
+        <div id="gajiPaneKasbon" class="segpane">
+
+        <p class="muted">Setujui pengajuan, pantau kasbon aktif — cicilannya otomatis masuk ke slip gaji tiap bulan.</p>
+
+        <div class="stat-row" id="kasbonStat"></div>
+
+        <div class="card">
+          <div class="card-head"><h2>Permintaan Menunggu</h2></div>
+          <div id="kasbonPermintaanList" class="emp-cards"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Kasbon Aktif</h2></div>
+          <div id="kasbonAktifList" class="emp-cards"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h2>Riwayat Selesai / Ditolak</h2></div>
+          <div id="kasbonRiwayatList" class="table-scroll"></div>
+        </div>
+              </div>
 
         <div id="gajiPaneTahunan" class="segpane">
         <p class="muted">Rekap <span id="tahunChip" class="chip"></span> — total pengeluaran gaji sepanjang tahun.</p>
@@ -349,30 +369,6 @@
            preset/kirim jurnal. Diisi lewat JS — kosong sampai dibuka. -->
       <div class="neraca-dialog no-print" id="neracaDialog" hidden></div>
       <div class="neraca-dialog no-print" id="jurnalDialog" hidden></div>
-
-      <section class="view" id="view-kasbon">
-        <div class="page-head">
-          <h1>Kasbon Karyawan</h1>
-          <p class="muted">Setujui pengajuan, pantau kasbon aktif — cicilannya otomatis masuk ke slip gaji tiap bulan.</p>
-        </div>
-
-        <div class="stat-row" id="kasbonStat"></div>
-
-        <div class="card">
-          <div class="card-head"><h2>Permintaan Menunggu</h2></div>
-          <div id="kasbonPermintaanList" class="emp-cards"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><h2>Kasbon Aktif</h2></div>
-          <div id="kasbonAktifList" class="emp-cards"></div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><h2>Riwayat Selesai / Ditolak</h2></div>
-          <div id="kasbonRiwayatList" class="table-scroll"></div>
-        </div>
-      </section>
 
       <!-- ====================== CHAT KARYAWAN ====================== -->
       <section class="view" id="view-chat">

@@ -170,20 +170,22 @@ function kunciTahun(y) {
 function totalBulan(key) { return rows(key).reduce((s, r) => s + hitung(r).total, 0); }
 
 /* ============================ NAVIGASI ============================
-   Cuma 6 view sungguhan sekarang: dashboard, gaji (gabungan Input/Slip/
-   Rekap), jurnal (gabungan Jurnal/Neraca), kasbon, chat, kelola. Chat &
-   Kelola dijangkau lewat ikon di topbar (lihat index.html), bukan tab —
-   makanya tidak ada lagi sheet "Lainnya", 4 tab utama + 2 ikon sudah
-   cukup ringkas untuk tab bar HP. */
-const VIEWS = ['dashboard', 'gaji', 'jurnal', 'kasbon', 'chat', 'kelola'];
+   5 view sungguhan sekarang: dashboard, gaji (gabungan Input/Slip/
+   Kasbon/Rekap), jurnal (gabungan Jurnal/Neraca), chat, kelola.
+   Setting (dulu "Kelola") tab lagi di nav — sempat jadi ikon di topbar,
+   tapi ikon+dropdown-bulan jadi sesak di iPhone sempit, jadi dipindah
+   balik dan mengisi slot yang ditinggalkan Kasbon (yang sekarang jadi
+   sub-tab di Gaji/Bonus). Chat tetap ikon — cuma dia yang tersisa di
+   topbar, jadi tidak sesak lagi. */
+const VIEWS = ['dashboard', 'gaji', 'jurnal', 'chat', 'kelola'];
 
 /* Nama tab lama (dari sebelum digabung) tetap dikenali — dipakai oleh
    pindahView('slip') dkk. di berkas ini sendiri, dan supaya tautan/hash
-   lama (#input, #neraca, dst.) tidak membawa ke layar kosong. Memetakan
-   ke [view gabungan, nama sub-tab di dalamnya]. */
+   lama (#input, #neraca, #kasbon, dst.) tidak membawa ke layar kosong.
+   Memetakan ke [view gabungan, nama sub-tab di dalamnya]. */
 const SUBTAB_ALIAS = {
-  input: ['gaji', 'input'], slip: ['gaji', 'slip'], tahunan: ['gaji', 'tahunan'],
-  neraca: ['jurnal', 'neraca'],
+  input: ['gaji', 'input'], slip: ['gaji', 'slip'], kasbon: ['gaji', 'kasbon'],
+  tahunan: ['gaji', 'tahunan'], neraca: ['jurnal', 'neraca'],
 };
 
 let subTabAktif = { gaji: 'input', jurnal: 'jurnal' };
@@ -204,10 +206,12 @@ function pindahSubTab(grup, nama, { render: segarkan = true } = {}) {
   if (grup === 'gaji') {
     $('#gajiPaneInput').classList.toggle('is-active', nama === 'input');
     $('#gajiPaneSlip').classList.toggle('is-active', nama === 'slip');
+    $('#gajiPaneKasbon').classList.toggle('is-active', nama === 'kasbon');
     $('#gajiPaneTahunan').classList.toggle('is-active', nama === 'tahunan');
     if (segarkan) {
       if (nama === 'input') renderInput();
       else if (nama === 'slip') renderSlipView();
+      else if (nama === 'kasbon' && window.Kasbon) window.Kasbon.segarkan();
       else if (nama === 'tahunan') renderTahunan();
     }
   } else if (grup === 'jurnal') {
@@ -247,7 +251,6 @@ $('#tabs').addEventListener('click', (e) => {
   if (t && t.dataset.view) pindahView(t.dataset.view);
 });
 $('#btnChat').addEventListener('click', () => pindahView('chat'));
-$('#btnSetting').addEventListener('click', () => pindahView('kelola'));
 
 /* Segmented control di halaman Kelola */
 let segAktif = 'karyawan';
@@ -301,18 +304,18 @@ function render(hanya) {
   isiPeriode();
   const aktif = hanya || ($('.view.is-active') || {}).id?.replace('view-', '') || 'dashboard';
   if (aktif === 'dashboard') renderDashboard();
-  // 'gaji' = view gabungan Input/Slip/Rekap — ketiganya disegarkan
+  // 'gaji' = view gabungan Input/Slip/Kasbon/Rekap — semuanya disegarkan
   // sekaligus (sama seperti Kelola menyegarkan Karyawan & Pengaturan
   // sekaligus), supaya isinya tetap benar kalau dropdown bulan/tahun
   // berubah sementara sub-tab lain yang sedang tampil.
   if (aktif === 'gaji' || aktif === 'input')   renderInput();
   if (aktif === 'gaji' || aktif === 'slip')    renderSlipView();
+  if ((aktif === 'gaji' || aktif === 'kasbon') && window.Kasbon) window.Kasbon.segarkan();
   if (aktif === 'gaji' || aktif === 'tahunan') renderTahunan();
   if (aktif === 'chat' && window.ChatPemilik) window.ChatPemilik.segarkan();
   // 'jurnal' = view gabungan Jurnal/Neraca — sama, disegarkan sekaligus.
   if ((aktif === 'jurnal' || aktif === 'neraca') && window.Neraca) window.Neraca.segarkan();
   if (aktif === 'jurnal' && window.Jurnal) window.Jurnal.segarkan(periode);
-  if (aktif === 'kasbon' && window.Kasbon) window.Kasbon.segarkan();
   if (aktif === 'kelola')  { pasangSegmen(); renderKaryawan(); renderPengaturan(); }
 }
 
