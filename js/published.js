@@ -26,28 +26,17 @@ let subTab = 'slip';
 let slipDipilih = null;                 // periode slip yang dibuka di pane Slip
 let laporanCache = { empId: null, docs: [] };
 let capaianToken = 0;                   // anti tumpang-tindih render async
+let terpasang = false;
 
 const q  = (s, r = document) => r.querySelector(s);
 const qq = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/* --------------------------- Pemasangan --------------------------- */
-document.addEventListener('DOMContentLoaded', pasang);
-if (document.readyState !== 'loading') pasang();
-
-document.addEventListener('cloud-siap', () => {
-  const C = window.CLOUD;
-  if (!C || !C.aktif || !C.db) return;
-  db = C.db; fsMod = C.fsMod;
-  if (tampil()) segarkan();
-});
-
-/* Ikut menyegarkan kalau data sumbernya berubah sementara menu ini terbuka */
-document.addEventListener('slip-terbit-berubah', () => { if (tampil()) renderSlip(); });
-document.addEventListener('kasbon-berubah',      () => { if (tampil()) renderKasbon(); });
-
-let terpasang = false;
+/* --------------------------- Pemasangan ---------------------------
+   Registrasi listener & panggilan awal dikumpulkan di BAWAH berkas, setelah
+   semua deklarasi, supaya tidak menyentuh `let` yang belum terinisialisasi
+   (TDZ) saat modul dievaluasi. */
 function pasang() {
   if (terpasang || !q('#view-published')) return;
   terpasang = true;
@@ -413,3 +402,23 @@ function tglMs(ms) {
   if (!ms) return '—';
   return new Date(ms).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+/* ===================== Registrasi (dijalankan sekali) ===================== */
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pasang);
+else pasang();
+
+/* cloud-siap mungkin sudah lewat sebelum modul ini dievaluasi — ambil
+   sambungannya langsung kalau memang sudah aktif. */
+if (window.CLOUD && window.CLOUD.aktif && window.CLOUD.db) {
+  db = window.CLOUD.db; fsMod = window.CLOUD.fsMod;
+}
+document.addEventListener('cloud-siap', () => {
+  const C = window.CLOUD;
+  if (!C || !C.aktif || !C.db) return;
+  db = C.db; fsMod = C.fsMod;
+  if (tampil()) segarkan();
+});
+
+/* Ikut menyegarkan kalau data sumbernya berubah sementara menu ini terbuka */
+document.addEventListener('slip-terbit-berubah', () => { if (tampil()) renderSlip(); });
+document.addEventListener('kasbon-berubah',      () => { if (tampil()) renderKasbon(); });
