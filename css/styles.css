@@ -59,13 +59,19 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-/* overflow-x: hidden di sini adalah JARING PENGAMAN — kalau satu baris
-   (mis. topbar penuh ikon+dropdown) sampai sedikit lebih lebar dari
-   layar, Safari iPhone akan mengecilkan (zoom out) SELURUH halaman
-   supaya baris itu tetap muat, bukan cuma memotong baris itu sendiri.
-   Ini mencegah efek "tampilan iPhone jadi mengecil" itu, apa pun
-   penyebab overflow-nya nanti. */
-html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
+/* overflow-x di sini adalah JARING PENGAMAN — kalau satu baris (mis. topbar
+   penuh ikon+dropdown) sampai sedikit lebih lebar dari layar, Safari iPhone
+   akan mengecilkan (zoom out) SELURUH halaman supaya baris itu tetap muat.
+   Ini mencegah efek "tampilan iPhone jadi mengecil" itu.
+
+   PENTING pakai `clip`, bukan `hidden`: `overflow-x: hidden` memaksa
+   `overflow-y` jadi `auto`, sehingga <html>/<body> berubah jadi wadah
+   scroll vertikal sendiri. Di Chrome Android itu membuat halaman yang isinya
+   lebih tinggi dari layar (mis. tab Slip Gaji di lapor.html) MACET tak bisa
+   di-scroll ke bawah — di iOS Safari gesture-nya diteruskan jadi terasa
+   normal. `clip` memberi kliping yang sama tanpa efek samping itu.
+   Baris `hidden` dibiarkan sebagai fallback untuk Safari < 16. */
+html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; overflow-x: clip; }
 body {
   font-family: var(--font);
   background: var(--surface-0);

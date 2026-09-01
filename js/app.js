@@ -53,6 +53,29 @@ function migrasiBaris(r) {
   return bersih;
 }
 
+/* Melengkapi state lama saat sebuah KOMPONEN bonus baru ditambahkan di
+   data.js (mis. "grooming", Sep 2026): setiap baris gaji diberi slot
+   qty/rate-nya, dan setiap posisi diberi baris tarifnya. Nilainya 0 —
+   tarif sebenarnya diisi pemilik di Setting → Tarif Bonus Default atau
+   per karyawan tiap bulan. Aman dijalankan berulang. */
+function lengkapiKomponen(s) {
+  Object.values(s.payroll || {}).forEach((list) => {
+    list.forEach((r) => {
+      r.qty = r.qty || {};
+      r.rate = r.rate || {};
+      KOMPONEN.forEach((k) => {
+        if (!r.qty[k.id]) r.qty[k.id] = { mdo: 0, tmh: 0 };
+        if (r.rate[k.id] === undefined) r.rate[k.id] = 0;
+      });
+    });
+  });
+  Object.values(s.tarif || {}).forEach((t) => {
+    if (!t) return;
+    KOMPONEN.forEach((k) => { if (t[k.id] === undefined) t[k.id] = 0; });
+  });
+  return s;
+}
+
 function muat() {
   try {
     const raw = gudang.getItem(APP.storageKey);
@@ -85,6 +108,7 @@ function muat() {
     }
     s.version = APP.version;
     s.tarif = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT_TARIF)), s.tarif || {});
+    lengkapiKomponen(s);
     return s;
   } catch (e) {
     console.warn('Gagal membaca data tersimpan, memakai data awal.', e);
@@ -112,6 +136,7 @@ window.LovePet = {
     state.cabang = Object.assign({}, DEFAULT_CABANG, state.cabang || {});
     state.roles = (state.roles && state.roles.length) ? state.roles : DEFAULT_ROLES.slice();
     state.tarif = Object.assign({}, JSON.parse(JSON.stringify(DEFAULT_TARIF)), state.tarif || {});
+    lengkapiKomponen(state);
     gudang.setItem(APP.storageKey, JSON.stringify(state));
     if (!state.payroll[periode]) periode = periodeTerakhir();
     render();

@@ -43,10 +43,11 @@ const DEFAULT_CABANG = { mdo: 'Manado', tmh: 'Tomohon' };
 const KOMPONEN = [
   { id: 'clients', label: 'Clients',     slip: 'Bonus Clients',     satuan: 'client'  },
   { id: 'jaga',    label: 'Jaga minggu', slip: 'Bonus Jaga Minggu', satuan: 'jaga'    },
-  { id: 'lembur',  label: 'Lembur',      slip: 'Bonus Lembur',      satuan: 'lembur',   laporSendiri: true, ikon: '🕒' },
-  { id: 'rawat',   label: 'Rawat inap',  slip: 'Bonus Rawat Inap',  satuan: 'hari',     laporSendiri: true, ikon: '🐾' },
-  { id: 'styling', label: 'Styling',     slip: 'Bonus Styling',     satuan: 'styling',  laporSendiri: true, ikon: '✂️' },
-  { id: 'operasi', label: 'Operasi',     slip: 'Bonus Operasi',     satuan: 'operasi',  laporSendiri: true, ikon: '🩺', peran: ['Dokter'] },
+  { id: 'lembur',   label: 'Lembur',      slip: 'Bonus Lembur',      satuan: 'lembur',   laporSendiri: true, ikon: '🕒' },
+  { id: 'rawat',    label: 'Rawat inap',  slip: 'Bonus Rawat Inap',  satuan: 'hari',     laporSendiri: true, ikon: '🐾' },
+  { id: 'styling',  label: 'Styling',     slip: 'Bonus Styling',     satuan: 'styling',  laporSendiri: true, ikon: '✂️' },
+  { id: 'grooming', label: 'Grooming',    slip: 'Bonus Grooming',    satuan: 'grooming', laporSendiri: true, ikon: '🛁' },
+  { id: 'operasi',  label: 'Operasi',     slip: 'Bonus Operasi',     satuan: 'operasi',  laporSendiri: true, ikon: '🩺', peran: ['Dokter'] },
 ];
 
 /* Komponen yang boleh dilaporkan sendiri oleh karyawan */
@@ -57,11 +58,11 @@ function komponenLaporSendiri(role) {
 /* ---------- Tarif default per posisi (rupiah per satuan) ----------
    Nilai per Juli 2026.                                                */
 const DEFAULT_TARIF = {
-  Manager: { clients: 0,     jaga: 0,      lembur: 0,      rawat: 0,     styling: 0,     operasi: 0,     makan: 0      },
-  Admin:   { clients: 3500,  jaga: 30000,  lembur: 50000,  rawat: 10000, styling: 25000, operasi: 0,     makan: 450000 },
-  Dokter:  { clients: 10000, jaga: 100000, lembur: 100000, rawat: 15000, styling: 25000, operasi: 50000, makan: 450000 },
-  Groomer: { clients: 10000, jaga: 30000,  lembur: 50000,  rawat: 10000, styling: 25000, operasi: 0,     makan: 450000 },
-  Helper:  { clients: 10000, jaga: 30000,  lembur: 50000,  rawat: 10000, styling: 25000, operasi: 0,     makan: 450000 },
+  Manager: { clients: 0,     jaga: 0,      lembur: 0,      rawat: 0,     styling: 0,     grooming: 0,     operasi: 0,     makan: 0      },
+  Admin:   { clients: 3500,  jaga: 30000,  lembur: 50000,  rawat: 10000, styling: 25000, grooming: 0,     operasi: 0,     makan: 450000 },
+  Dokter:  { clients: 10000, jaga: 100000, lembur: 100000, rawat: 15000, styling: 25000, grooming: 0,     operasi: 50000, makan: 450000 },
+  Groomer: { clients: 10000, jaga: 30000,  lembur: 50000,  rawat: 10000, styling: 25000, grooming: 0,     operasi: 0,     makan: 450000 },
+  Helper:  { clients: 10000, jaga: 30000,  lembur: 50000,  rawat: 10000, styling: 25000, grooming: 0,     operasi: 0,     makan: 450000 },
 };
 
 /* Daftar awal — bisa ditambah/diubah/dihapus lewat Kelola → Pengaturan →

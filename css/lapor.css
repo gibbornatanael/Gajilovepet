@@ -118,14 +118,12 @@
 }
 /* Slip digambar untuk kertas A4 — di layar HP diperkecil agar utuh terlihat,
    tanpa mengubah hasil PNG-nya (html2canvas membaca ukuran aslinya). */
-/* overflow-x:auto sendirian membuat sumbu-y ikut jadi "auto" (aturan CSS:
-   kalau salah satu sumbu non-visible, yang visible dipaksa auto). Di Chrome
-   Android elemen jadi wadah scroll vertikal setinggi isinya — gesture geser
-   ke bawah "termakan" di sini dan halaman tak ikut turun (di iOS Safari
-   gesture-nya diteruskan ke halaman, makanya di iPhone terasa normal).
-   overflow-y:hidden mengembalikan perilaku: sumbu-x tetap bisa digeser,
-   sumbu-y bukan lagi wadah scroll sehingga gesture diteruskan ke halaman. */
-#slipIsi { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+/* Slip yang tabelnya kelewat lebar boleh digeser ke samping. overflow-y
+   dikunci `hidden` supaya elemen ini tidak ikut jadi wadah scroll vertikal
+   yang "menelan" gesture geser di Chrome Android (lihat catatan panjang di
+   html,body pada styles.css). Tinggi tetap mengikuti isi — tidak ada yang
+   terpotong. */
+#slipIsi { overflow-x: auto; overflow-y: hidden; }
 #slipIsi .slip { margin: 0 auto; }
 .slip-aksi { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 .slip-aksi .btn { flex: 1; min-width: 130px; text-align: center; }
