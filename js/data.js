@@ -38,8 +38,9 @@ const DEFAULT_CABANG = { mdo: 'Manado', tmh: 'Tomohon' };
               ini perlu disunting manual di sini juga (tidak ikut berubah
               otomatis, karena KOMPONEN bukan bagian dari data tersimpan).
      laporSendiri : true bila karyawan boleh melaporkan sendiri lewat
-                    halaman "Lovepet Crew" (lapor.html) — sekali
-                    per hari, dengan foto bukti.                        */
+                    halaman "Lovepet Crew" (lapor.html), dengan foto bukti.
+                    Lembur dibatasi sekali per hari; grooming, styling,
+                    rawat inap, dan operasi boleh berkali-kali sehari.    */
 const KOMPONEN = [
   { id: 'clients', label: 'Clients',     slip: 'Bonus Clients',     satuan: 'client'  },
   { id: 'jaga',    label: 'Jaga minggu', slip: 'Bonus Jaga Minggu', satuan: 'jaga'    },

@@ -34,9 +34,11 @@ service cloud.firestore {
     }
 
     // Laporan performa harian dari karyawan.
-    // ID dokumen dibuat aplikasi dengan pola {empId}_{tanggal}_{kategori}
-    // sehingga "maksimal satu laporan per hari per kategori" otomatis
-    // terjamin — dokumen yang sama ditimpa, bukan digandakan.
+    // ID dokumen dibuat aplikasi:
+    //   • lembur  → {empId}_{tanggal}_lembur (tetap) sehingga maksimal satu
+    //               laporan lembur per hari — dokumen yang sama ditimpa.
+    //   • lainnya → {empId}_{tanggal}_{kategori}_{acak} sehingga grooming,
+    //               styling, rawat inap, dan operasi boleh berkali-kali sehari.
     match /klinik/{klinikId}/laporan/{laporId} {
       allow read: if isPemilik() ||
         (request.auth != null && resource.data.authUid == request.auth.uid);

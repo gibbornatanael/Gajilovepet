@@ -15,6 +15,12 @@ let cabangAktif = CABANG[0];
 let statusHariIni = {};     // kategori -> data laporan aktif hari ini (atau null)
 let modeLapor = 'lapor';
 
+/* Kategori yang hanya boleh dilaporkan SEKALI per hari (dokumennya
+   dikunci ke satu ID {empId}_{tanggal}_{kategori} sehingga menimpa,
+   bukan menggandakan). Sisanya — grooming, styling, rawat inap, operasi —
+   boleh dilaporkan berkali-kali dalam sehari (tiap laporan dokumen baru). */
+const SEKALI_SEHARI = new Set(['lembur']);
+
 function setStatus(teks, jenis) {
   const el = $('#cloudStatus');
   if (!el) return;
@@ -212,7 +218,9 @@ function idLaporan(empId, tanggal, kategori) { return `${empId}_${tanggal}_${kat
 
 async function muatStatusHariIni() {
   const hari = tanggalISO();
-  const komp = komponenLaporSendiri(profil.role);
+  // Hanya kategori "sekali sehari" (lembur) yang dikunci — untuk itu kita
+  // cek keberadaan dokumen harian. Kategori lain selalu bisa dilaporkan lagi.
+  const komp = komponenLaporSendiri(profil.role).filter((k) => SEKALI_SEHARI.has(k.id));
   const hasil = await Promise.all(komp.map(async (k) => {
     try {
       const ref = fsMod.doc(db, 'klinik', KLINIK_ID, 'laporan', idLaporan(profil.empId, hari, k.id));
@@ -227,7 +235,7 @@ async function muatStatusHariIni() {
 function renderLaporGrid() {
   const komp = komponenLaporSendiri(profil.role);
   $('#laporGrid').innerHTML = komp.map((k) => {
-    const s = statusHariIni[k.id];
+    const s = statusHariIni[k.id];   // hanya terisi untuk kategori "sekali sehari"
     if (s) {
       return `<div class="lapor-tile sudah" data-k="${k.id}">
         <div class="ikon">${k.ikon || '✅'}</div>
@@ -245,7 +253,8 @@ function renderLaporGrid() {
   }).join('');
 
   $$('#laporGrid [data-lapor]').forEach((b) => b.addEventListener('click', () => mulaiLapor(b.dataset.lapor)));
-  $$('#laporGrid [data-batal]').forEach((b) => b.addEventListener('click', () => batalkanLaporan(b.dataset.batal)));
+  $$('#laporGrid [data-batal]').forEach((b) => b.addEventListener('click', () =>
+    batalkanLaporan(idLaporan(profil.empId, tanggalISO(), b.dataset.batal), b.dataset.batal)));
 }
 
 let kategoriTerpilih = null;
@@ -271,8 +280,13 @@ async function onFotoDipilih(e) {
       status: 'aktif', foto,
       waktu: fsMod.serverTimestamp(), dibuatMs: Date.now(),
     };
-    await fsMod.setDoc(fsMod.doc(db, 'klinik', KLINIK_ID, 'laporan', idLaporan(profil.empId, hari, kategori)), data);
-    statusHariIni[kategori] = data;
+    // "Sekali sehari" (lembur) → ID harian tetap, laporan kedua menimpa yang
+    // pertama. Kategori lain → ID unik, jadi boleh berkali-kali dalam sehari.
+    const docId = SEKALI_SEHARI.has(kategori)
+      ? idLaporan(profil.empId, hari, kategori)
+      : `${idLaporan(profil.empId, hari, kategori)}_${Date.now().toString(36)}`;
+    await fsMod.setDoc(fsMod.doc(db, 'klinik', KLINIK_ID, 'laporan', docId), data);
+    if (SEKALI_SEHARI.has(kategori)) statusHariIni[kategori] = data;
     renderLaporGrid();
     toast('Tersimpan! Lihat capaianmu →');
     setTimeout(() => $('#segLapor .seg[data-seg="capaian"]').click(), 500);
@@ -283,15 +297,14 @@ async function onFotoDipilih(e) {
   }
 }
 
-async function batalkanLaporan(kategori) {
+async function batalkanLaporan(docId, kategori) {
   const k = komponenLaporSendiri(profil.role).find((x) => x.id === kategori);
   if (!confirm(`Batalkan laporan ${k ? k.label : kategori} hari ini?`)) return;
-  const hari = tanggalISO();
   try {
-    await fsMod.updateDoc(fsMod.doc(db, 'klinik', KLINIK_ID, 'laporan', idLaporan(profil.empId, hari, kategori)), {
+    await fsMod.updateDoc(fsMod.doc(db, 'klinik', KLINIK_ID, 'laporan', docId), {
       status: 'batal', authUid: profil.authUid, empId: profil.empId,
     });
-    statusHariIni[kategori] = null;
+    if (SEKALI_SEHARI.has(kategori)) statusHariIni[kategori] = null;
     renderLaporGrid();
     toast('Laporan dibatalkan');
     if (modeLapor === 'capaian') muatCapaian();
@@ -337,7 +350,7 @@ async function muatCapaian() {
   snap.forEach((doc) => {
     const d = doc.data();
     if (d.status === 'aktif') hitungKat[d.kategori] = (hitungKat[d.kategori] || 0) + 1;
-    baris.push(d);
+    baris.push({ ...d, _id: doc.id });
   });
 
   $('#statKaryawan').innerHTML = komp.map((k) => `
@@ -357,11 +370,11 @@ async function muatCapaian() {
         <b>${esc(k ? k.label : d.kategori)}</b>
         <small>${formatTanggal(d.tanggal)} · ${esc(DEFAULT_CABANG[d.cabang] || d.cabang)}${batal ? ' · <span class="batal-badge">Dibatalkan</span>' : ''}</small>
       </div>
-      ${bisaBatal ? `<button type="button" class="batalkan" data-batal2="${d.kategori}">Batalkan</button>` : ''}
+      ${bisaBatal ? `<button type="button" class="batalkan" data-batal2="${d._id}" data-kat2="${d.kategori}">Batalkan</button>` : ''}
     </div>`;
   }).join('') : '<div class="empty">Belum ada laporan bulan ini.</div>';
 
-  $$('#riwayatList [data-batal2]').forEach((b) => b.addEventListener('click', () => batalkanLaporan(b.dataset.batal2)));
+  $$('#riwayatList [data-batal2]').forEach((b) => b.addEventListener('click', () => batalkanLaporan(b.dataset.batal2, b.dataset.kat2)));
 }
 function formatTanggal(iso) {
   const [y, m, d] = iso.split('-').map(Number);
