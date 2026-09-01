@@ -41,6 +41,10 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h9l4 4v14.4H6z"/><path d="M15 2.8v4.2h4"/><path d="M9 12h6M9 15.5h6"/></svg>
       <span>Gaji/Bonus</span>
     </button>
+    <button class="tabitem" data-view="published">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Published</span>
+    </button>
     <button class="tabitem" data-view="kelola">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20.5c0-3.6 3.4-6 7.5-6s7.5 2.4 7.5 6"/></svg>
       <span>Setting</span>
@@ -370,6 +374,59 @@
       <div class="neraca-dialog no-print" id="neracaDialog" hidden></div>
       <div class="neraca-dialog no-print" id="jurnalDialog" hidden></div>
 
+      <!-- ====================== PUBLISHED ======================
+           Cermin halaman "Lovepet Crew" tiap karyawan — supaya pemilik bisa
+           mengecek apa yang benar-benar tayang di layar mereka (slip yang
+           sudah disetujui, laporan performa, kasbon) tanpa login satu-satu.
+           Pilih nama lewat dropdown. Isinya read-only; tombol aksi tetap di
+           tab masing-masing (Slip Gaji, Kasbon, Chat). -->
+      <section class="view" id="view-published">
+        <div class="page-head">
+          <h1>Published</h1>
+          <p class="muted">Apa yang tayang di halaman Lovepet Crew tiap karyawan. Read-only — untuk mengecek benar/salahnya dari sini.</p>
+        </div>
+
+        <div class="toolbar no-print">
+          <label class="field inline seg-select">
+            <span>Karyawan</span>
+            <select id="pubKaryawan"></select>
+          </label>
+          <span class="grow"></span>
+          <button class="btn" id="pubBukaChat" type="button">Buka chat</button>
+        </div>
+
+        <div class="otorisasi no-print" id="pubCatatanAkun" hidden></div>
+
+        <div class="segmented" id="segPub" role="tablist">
+          <button class="seg is-active" data-seg="slip" role="tab">Slip Gaji</button>
+          <button class="seg" data-seg="capaian" role="tab">Capaian</button>
+          <button class="seg" data-seg="kasbon" role="tab">Kasbon</button>
+        </div>
+
+        <div id="pubPaneSlip" class="segpane is-active">
+          <div id="pubSlipList" class="pub-slip-list"></div>
+          <div id="pubSlipView"></div>
+        </div>
+
+        <div id="pubPaneCapaian" class="segpane">
+          <div class="toolbar">
+            <label class="period-picker">
+              <span class="sr-only">Bulan</span>
+              <select id="pubCapaianPeriode"></select>
+            </label>
+          </div>
+          <div id="pubCapaianStat" class="stat-row"></div>
+          <div class="card">
+            <div class="card-head"><h2>Riwayat Laporan</h2></div>
+            <div id="pubCapaianRiwayat"></div>
+          </div>
+        </div>
+
+        <div id="pubPaneKasbon" class="segpane">
+          <div id="pubKasbonIsi"></div>
+        </div>
+      </section>
+
       <!-- ====================== CHAT KARYAWAN ====================== -->
       <section class="view" id="view-chat">
         <div class="page-head chat-hanya-daftar">
@@ -509,6 +566,7 @@
 <script type="module" src="js/provisioning.js"></script>
 <script type="module" src="js/slip-terbit.js"></script>
 <script type="module" src="js/kasbon.js"></script>
+<script type="module" src="js/published.js"></script>
 <script type="module" src="js/neraca.js"></script>
 <script type="module" src="js/jurnal.js"></script>
 <script type="module" src="js/chat.js"></script>

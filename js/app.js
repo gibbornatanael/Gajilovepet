@@ -164,6 +164,17 @@ window.LovePet = {
     simpan(true);
     render('input');
   },
+
+  /* Dipakai menu Published (js/published.js). */
+  daftarKaryawan: () => state.karyawan.slice(),
+  /* Snapshot slip TERKINI (hasil hitung dari state saat ini) untuk periode
+     tertentu — dipakai membandingkan dengan slip yang sudah diterbitkan,
+     supaya pemilik tahu yang tayang masih cocok atau sudah ketinggalan.
+     null kalau karyawan itu tak punya baris gaji di periode tsb. */
+  slipTerkini(empId, key) {
+    const r = rows(key).find((x) => x.empId === empId);
+    return r ? snapshotSlip(r, key) : null;
+  },
 };
 
 function periodeTerakhir() {
@@ -202,7 +213,7 @@ function totalBulan(key) { return rows(key).reduce((s, r) => s + hitung(r).total
    balik dan mengisi slot yang ditinggalkan Kasbon (yang sekarang jadi
    sub-tab di Gaji/Bonus). Chat tetap ikon — cuma dia yang tersisa di
    topbar, jadi tidak sesak lagi. */
-const VIEWS = ['dashboard', 'gaji', 'jurnal', 'chat', 'kelola'];
+const VIEWS = ['dashboard', 'gaji', 'jurnal', 'published', 'chat', 'kelola'];
 
 /* Nama tab lama (dari sebelum digabung) tetap dikenali — dipakai oleh
    pindahView('slip') dkk. di berkas ini sendiri, dan supaya tautan/hash
@@ -337,6 +348,7 @@ function render(hanya) {
   if (aktif === 'gaji' || aktif === 'slip')    renderSlipView();
   if ((aktif === 'gaji' || aktif === 'kasbon') && window.Kasbon) window.Kasbon.segarkan();
   if (aktif === 'gaji' || aktif === 'tahunan') renderTahunan();
+  if (aktif === 'published' && window.Published) window.Published.segarkan();
   if (aktif === 'chat' && window.ChatPemilik) window.ChatPemilik.segarkan();
   // 'jurnal' = view gabungan Jurnal/Neraca — sama, disegarkan sekaligus.
   if ((aktif === 'jurnal' || aktif === 'neraca') && window.Neraca) window.Neraca.segarkan();

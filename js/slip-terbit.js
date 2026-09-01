@@ -56,6 +56,15 @@ function status(empId, periode) {
   return peta.get(idSlip(empId, periode)) || null;
 }
 
+/* Semua slip yang pernah diterbitkan ke seorang karyawan — dipakai menu
+   Published (js/published.js) untuk memperlihatkan persis apa yang tampil
+   di tab Slip Gaji miliknya, semua periode sekaligus. Terbaru di atas. */
+function semua(empId) {
+  return Array.from(peta.values())
+    .filter((d) => d.empId === empId)
+    .sort((a, b) => String(b.periode).localeCompare(String(a.periode)));
+}
+
 /* Setujui — tulis snapshot & buka aksesnya untuk karyawan.
    Versi naik setiap kali isinya benar-benar berbeda dari yang sudah pernah
    dikirim, atau setiap kali slip dihidupkan lagi setelah ditarik. Angka ini
@@ -126,5 +135,5 @@ async function kabari(empId, authUid, teks) {
 
 window.SlipTerbit = {
   siap: () => Boolean(db),
-  status, setujui, tarik,
+  status, semua, setujui, tarik,
 };

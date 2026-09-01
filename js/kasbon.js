@@ -47,12 +47,14 @@ function dengarkan() {
   fsMod.onSnapshot(fsMod.collection(db, 'klinik', KLINIK_ID, 'kasbon'), (snap) => {
     kasbonMap = new Map(snap.docs.map((d) => [d.id, Object.assign({ empId: d.id }, d.data())]));
     render();
+    document.dispatchEvent(new CustomEvent('kasbon-berubah'));
   }, (e) => console.warn('Kasbon akun:', e));
 
   fsMod.onSnapshot(fsMod.collection(db, 'klinik', KLINIK_ID, 'kasbonPermintaan'), (snap) => {
     permintaan = snap.docs.map((d) => Object.assign({ id: d.id }, d.data()))
       .sort((a, b) => (b.diajukanMs || 0) - (a.diajukanMs || 0));
     render();
+    document.dispatchEvent(new CustomEvent('kasbon-berubah'));
   }, (e) => console.warn('Kasbon permintaan:', e));
 }
 
@@ -296,4 +298,8 @@ window.Kasbon = {
   segarkan: render,
   cicilanSaran,
   terapkanPotongan,
+  /* Dibaca menu Published (js/published.js) untuk mencerminkan tab Kasbon
+     milik satu karyawan. */
+  akun: (empId) => kasbonMap.get(empId) || null,
+  pengajuan: (empId) => permintaan.filter((p) => p.empId === empId),
 };

@@ -925,3 +925,56 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 }
 .jurnal-draft-sumber p { margin: 0 0 4px; font-size: .8rem; }
 .jurnal-draft-sumber p:last-child { margin-bottom: 0; }
+
+/* ========================= MENU PUBLISHED =========================
+   Cermin halaman "Lovepet Crew" tiap karyawan (js/published.js). Sebagian
+   besar memakai ulang gaya yang sudah ada (.card, .stat, .segmented, .slip,
+   .empty, .otorisasi, .kasbon-progress, .kasbon-status); di bawah hanya
+   yang khas menu ini. */
+.pub-slip-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+.pub-slip-baris {
+  display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap;
+  width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px;
+}
+.pub-slip-baris:hover { background: var(--surface-2); }
+.pub-slip-baris.is-active { border-color: var(--brand); background: var(--brand-soft); }
+.pub-slip-baris .pb-per { font-weight: 650; font-size: .92rem; flex: 1; min-width: 130px; }
+.pub-slip-baris .pb-nilai { font-variant-numeric: tabular-nums; font-weight: 650; font-size: .88rem; }
+
+.pub-badge {
+  display: inline-block; font-size: .7rem; font-weight: 650; padding: 2px 9px;
+  border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--text-secondary);
+}
+.pub-badge.ok   { background: color-mix(in srgb, var(--good) 16%, var(--surface-1));   color: var(--good);   border-color: color-mix(in srgb, var(--good) 35%, var(--border)); }
+.pub-badge.warn { background: color-mix(in srgb, var(--danger) 14%, var(--surface-1)); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+.pub-badge.mute { opacity: .8; }
+.pub-flag { color: var(--danger); font-weight: 650; font-size: .76rem; }
+.pub-slip-ket { margin: 0 0 10px; }
+
+.pub-riwayat-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.pub-riwayat-row:last-child { border-bottom: 0; }
+.pub-riwayat-row img,
+.pub-riwayat-row .thumb {
+  width: 44px; height: 44px; border-radius: 9px; object-fit: cover; flex: none;
+  background: var(--surface-2); display: grid; place-items: center; font-size: 1.1rem;
+}
+.pub-riwayat-row .info { flex: 1; min-width: 0; }
+.pub-riwayat-row .info b { display: block; font-size: .9rem; }
+.pub-riwayat-row .info small { color: var(--text-muted); font-size: .76rem; }
+.pub-batal { color: var(--danger); font-weight: 650; }
+
+/* Status pengajuan kasbon (dipakai di menu Published; kembar dengan yang di
+   css/lapor.css untuk halaman karyawan). */
+.kasbon-status {
+  display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 999px;
+  font-size: .68rem; font-weight: 650; vertical-align: middle;
+}
+.kasbon-status.menunggu  { background: color-mix(in srgb, var(--brand) 16%, var(--surface-1));  color: var(--brand-ink); }
+.kasbon-status.disetujui { background: color-mix(in srgb, var(--good) 16%, var(--surface-1));   color: var(--good); }
+.kasbon-status.ditolak   { background: color-mix(in srgb, var(--danger) 14%, var(--surface-1)); color: var(--danger); }
