@@ -29,7 +29,10 @@
     : 'Rp ' + Math.round(Number(v) || 0).toLocaleString('id-ID'));
 
   function baris(list) {
-    const isi = (list || []).filter((x) => x.nilai).map((x) =>
+    // Tampilkan pula komponen yang memiliki keterangan jumlah poin. Ini
+    // membuat Bonus Grooming tetap tampak saat jumlahnya sudah diinput,
+    // walau tarifnya masih Rp0.
+    const isi = (list || []).filter((x) => x.nilai || x.ket).map((x) =>
       `<tr><td>${esc(x.label)}${x.ket ? `<div class="ket">${esc(x.ket)}</div>` : ''}</td>` +
       `<td class="r">${uang(x.nilai)}</td></tr>`).join('');
     return isi || '<tr><td colspan="2" style="color:#999">—</td></tr>';

@@ -955,7 +955,9 @@ function snapshotSlip(r, key) {
   const h = hitung(r);
   const e = emp(r.empId) || {};
   const p = state.profil;
-  const rapi = (list) => list.filter((x) => x.nilai)
+  // Poin performa (mis. grooming) tetap perlu terlihat di slip walau tarif
+  // bonusnya belum diatur. Karena itu, sertakan juga baris yang punya ket.
+  const rapi = (list) => list.filter((x) => x.nilai || x.ket)
     .map((x) => ({ label: x.label, nilai: x.nilai, ket: x.ket || '' }));
 
   return {
@@ -1127,7 +1129,7 @@ $('#btnSalinWA').addEventListener('click', async () => {
   const txt = [
     `*${state.profil.nama}* — Slip Gaji ${labelPeriode(periode)}`,
     `Nama: ${r.nama} (${r.role})`, '',
-    ...h.pendapatan.filter((x) => x.nilai).map((x) => `• ${x.label}: ${rp(x.nilai)}${x.ket ? ` (${x.ket})` : ''}`),
+    ...h.pendapatan.filter((x) => x.nilai || x.ket).map((x) => `• ${x.label}: ${rp(x.nilai)}${x.ket ? ` (${x.ket})` : ''}`),
     `Total pendapatan: ${rp(h.bruto)}`,
     ...(h.potongan ? ['', ...h.potonganList.filter((x) => x.nilai).map((x) => `• ${x.label}: −${rp(x.nilai)}`)] : []),
     '', `*Gaji diterima: ${rp(h.total)}*`, `(${terbilang(h.total)})`,

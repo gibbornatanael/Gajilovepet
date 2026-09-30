@@ -139,7 +139,9 @@ function hitung(row) {
     const nilai = q * r;
     bonus[k.id] = nilai;
     totalBonus += nilai;
-    return { label: k.slip, nilai };
+    // Simpan jumlahnya juga agar komponen tetap dapat ditampilkan di slip
+    // ketika ada poin yang dicatat, meskipun tarifnya masih Rp0.
+    return { label: k.slip, nilai, ket: q ? `${q} ${k.satuan}` : '' };
   });
 
   const pendapatan = [
