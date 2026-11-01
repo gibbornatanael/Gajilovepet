@@ -356,7 +356,7 @@ async function muatCapaian() {
   $('#statKaryawan').innerHTML = komp.map((k) => `
     <div class="stat">
       <div class="k">${k.ikon || ''} ${esc(k.label)}</div>
-      <div class="v">${hitungKat[k.id] || 0}</div>
+      <div class="v">${hitungKat[k.id] || 0} <small>${esc(k.satuan)}</small></div>
     </div>`).join('');
 
   const hari = tanggalISO();

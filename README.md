@@ -47,7 +47,8 @@ Gaji diterima =
   + Clients     (jumlah × tarif)
   + Jaga minggu (jumlah × tarif)
   + Lembur      (jumlah × tarif)
-  + Rawat inap  (jumlah × tarif)
+  + Rawat inap/hotel  (jumlah × tarif)
+  + Rawat inap infeksius  (khusus Dokter, Rp5.000/hari)
   + Styling     (jumlah × tarif)
   + Operasi     (jumlah × tarif)   ← hanya Dokter
   + Tunjangan makan + tunjangan lain
