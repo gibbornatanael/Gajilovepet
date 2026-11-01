@@ -55,8 +55,8 @@ function migrasiBaris(r) {
 
 /* Melengkapi state lama saat sebuah KOMPONEN bonus baru ditambahkan di
    data.js (mis. "grooming", Sep 2026): setiap baris gaji diberi slot
-   qty/rate-nya, dan setiap posisi diberi baris tarifnya. Nilainya 0 —
-   tarif sebenarnya diisi pemilik di Setting → Tarif Bonus Default atau
+   qty/rate-nya, dan setiap posisi diberi baris tarifnya. Nilainya mengikuti
+   DEFAULT_TARIF (0 bila tak ada) — tarif sebenarnya diatur pemilik di Setting → Tarif Bonus Default atau
    per karyawan tiap bulan. Aman dijalankan berulang. */
 function lengkapiKomponen(s) {
   Object.values(s.payroll || {}).forEach((list) => {
@@ -65,13 +65,13 @@ function lengkapiKomponen(s) {
       r.rate = r.rate || {};
       KOMPONEN.forEach((k) => {
         if (!r.qty[k.id]) r.qty[k.id] = { mdo: 0, tmh: 0 };
-        if (r.rate[k.id] === undefined) r.rate[k.id] = 0;
+        if (r.rate[k.id] === undefined) r.rate[k.id] = ((DEFAULT_TARIF[r.role] || {})[k.id]) || 0;
       });
     });
   });
-  Object.values(s.tarif || {}).forEach((t) => {
+  Object.entries(s.tarif || {}).forEach(([role, t]) => {
     if (!t) return;
-    KOMPONEN.forEach((k) => { if (t[k.id] === undefined) t[k.id] = 0; });
+    KOMPONEN.forEach((k) => { if (t[k.id] === undefined) t[k.id] = ((DEFAULT_TARIF[role] || {})[k.id]) || 0; });
   });
   return s;
 }

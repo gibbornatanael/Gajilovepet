@@ -978,3 +978,4 @@ select:focus-visible, input:focus-visible, textarea:focus-visible, button:focus-
 .kasbon-status.menunggu  { background: color-mix(in srgb, var(--brand) 16%, var(--surface-1));  color: var(--brand-ink); }
 .kasbon-status.disetujui { background: color-mix(in srgb, var(--good) 16%, var(--surface-1));   color: var(--good); }
 .kasbon-status.ditolak   { background: color-mix(in srgb, var(--danger) 14%, var(--surface-1)); color: var(--danger); }
+.stat .v small { font-size: .7rem; font-weight: 500; color: var(--muted, #888); letter-spacing: 0; }

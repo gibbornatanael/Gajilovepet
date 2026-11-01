@@ -319,7 +319,7 @@ async function renderCapaian() {
   statBox.innerHTML = komp.length
     ? komp.map((k) => `<div class="stat">
         <div class="k">${k.ikon || ''} ${esc(k.label)}</div>
-        <div class="v">${hitung[k.id] || 0}</div>
+        <div class="v">${hitung[k.id] || 0} <small>${esc(k.satuan)}</small></div>
       </div>`).join('')
     : '';
 
